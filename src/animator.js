@@ -1,4 +1,4 @@
-import { DIR, SCALE, Y_PAD } from './config.js'
+import { DIR, SCALE, Y_PAD, PORTRAIT_SIZE, PORTRAIT_SCALE, PORTRAIT_GAP } from './config.js'
 
 // ─── State ────────────────────────────────────────────────────────────────────
 
@@ -12,6 +12,11 @@ let currentAnim  = null
 let currentFrame = 0
 let frameTimer   = 0
 
+// Portrait state
+let _portraits       = {}
+let _currentPortrait = 'Normal'
+let _portraitVisible = false
+
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
 export function init(canvas, ctx, animations, sheets, shadowY) {
@@ -20,6 +25,10 @@ export function init(canvas, ctx, animations, sheets, shadowY) {
   _animations = animations
   _sheets     = sheets
   _shadowY    = shadowY
+}
+
+export function initPortraits(portraits) {
+  _portraits = portraits
 }
 
 // ─── Animation control ────────────────────────────────────────────────────────
@@ -39,6 +48,13 @@ export function stepAnim() {
     frameTimer   = 0
     currentFrame = (currentFrame + 1) % anim.frameCount
   }
+}
+
+// ─── Portrait control ─────────────────────────────────────────────────────────
+
+export function setPortrait(name, visible) {
+  _currentPortrait = name
+  _portraitVisible = visible
 }
 
 // ─── Drawing ──────────────────────────────────────────────────────────────────
@@ -67,6 +83,14 @@ export function drawFrame(dirX) {
 
   _ctx.clearRect(0, 0, _canvas.width, _canvas.height)
 
+  // Portrait — drawn at the top of the canvas, centered horizontally
+  if (_portraitVisible && _portraits[_currentPortrait]) {
+    const pd = PORTRAIT_SIZE * PORTRAIT_SCALE
+    const px = Math.round((_canvas.width - pd) / 2)
+    _ctx.drawImage(_portraits[_currentPortrait], 0, 0, PORTRAIT_SIZE, PORTRAIT_SIZE, px, 0, pd, pd)
+  }
+
+  // Sprite
   if (flipH) {
     _ctx.save()
     _ctx.translate(destW, 0)  // flip within the sprite's own width, not the full canvas

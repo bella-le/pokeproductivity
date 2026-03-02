@@ -1,6 +1,7 @@
-import { DEX, SCALE, WALK_SPEED, IDLE_CHANCE, Y_PAD } from './config.js'
-import { loadPet } from './loader.js'
-import { init as initAnim, startAnim, stepAnim, drawFrame } from './animator.js'
+import { DEX, SCALE, WALK_SPEED, IDLE_CHANCE, Y_PAD,
+         PORTRAIT_NAMES, PORTRAIT_SIZE, PORTRAIT_SCALE, PORTRAIT_GAP } from './config.js'
+import { loadPet, loadPortraits } from './loader.js'
+import { init as initAnim, initPortraits, startAnim, stepAnim, drawFrame, setPortrait } from './animator.js'
 
 // ─── Canvas ───────────────────────────────────────────────────────────────────
 
@@ -49,13 +50,19 @@ function updateWalk() {
 
 canvas.addEventListener('mouseenter', () => {
   window.electronAPI.setIgnoreMouse(false)
-  if (!isDragging) { isWalking = false; startAnim('Idle') }
+  if (!isDragging) {
+    isWalking = false
+    startAnim('Idle')
+    setPortrait('Normal', true)
+  }
 })
 
 canvas.addEventListener('mouseleave', () => {
   if (!isDragging) {
     window.electronAPI.setIgnoreMouse(true)
-    isWalking = true; startAnim('Walk')
+    isWalking = true
+    startAnim('Walk')
+    setPortrait('Normal', false)
   }
 })
 
@@ -78,11 +85,11 @@ window.addEventListener('mousemove', (e) => {
 window.addEventListener('mouseup', async () => {
   if (!isDragging) return
   isDragging = false
-  // Re-sync posX with where the window actually landed after the drag
   const [wx] = await window.electronAPI.getWindowPos()
   posX = wx
   isWalking = true
   startAnim('Walk')
+  setPortrait('Normal', false)  // hide portrait; mouseenter will re-show if cursor stays over pet
   window.electronAPI.setIgnoreMouse(true)
 })
 
@@ -113,18 +120,32 @@ function loop() {
     const [winX] = await window.electronAPI.getWindowPos()
     posX = winX
 
-    const { animations, sheets, shadowY } = await loadPet(DEX)
-    initAnim(canvas, ctx, animations, sheets, shadowY)
+    const [{ animations, sheets, shadowY }, portraits] = await Promise.all([
+      loadPet(DEX),
+      loadPortraits(DEX, PORTRAIT_NAMES),
+    ])
 
-    // Size canvas to the tallest above-ground extent (Walk/Idle only — Hurt excluded
-    // to avoid inflating the window) plus Y_PAD breathing room on both sides.
-    const sizedAnims = ['Walk', 'Idle'].filter(n => animations[n])
-    const maxFrameW  = Math.max(...sizedAnims.map(n => animations[n].frameWidth))
-    const maxGroundY = Math.max(...sizedAnims.map(n => shadowY[n] ?? animations[n].frameHeight))
-    canvas.width  = maxFrameW            * SCALE
-    canvas.height = (maxGroundY + Y_PAD * 2) * SCALE
+    initAnim(canvas, ctx, animations, sheets, shadowY)
+    initPortraits(portraits)
+
+    // ── Canvas sizing ────────────────────────────────────────────────────────
+    // Sprite area: sized to Walk/Idle shadow anchors + breathing room
+    const sizedAnims  = ['Walk', 'Idle'].filter(n => animations[n])
+    const maxFrameW   = Math.max(...sizedAnims.map(n => animations[n].frameWidth))
+    const maxGroundY  = Math.max(...sizedAnims.map(n => shadowY[n] ?? animations[n].frameHeight))
+    const spriteAreaH = (maxGroundY + Y_PAD * 2) * SCALE
+
+    // Portrait area: sits above the sprite, always allocated (transparent when not hovering)
+    const portraitAreaH = PORTRAIT_SIZE * PORTRAIT_SCALE + PORTRAIT_GAP
+
+    canvas.width  = maxFrameW * SCALE
+    canvas.height = portraitAreaH + spriteAreaH
     ctx.imageSmoothingEnabled = false
+
+    // Resize the window to fit both areas, then shift it UP so the sprite's
+    // feet stay at the same screen position (setSize expands downward by default).
     window.electronAPI.setWindowSize(canvas.width, canvas.height)
+    window.electronAPI.moveWindow(0, -portraitAreaH)
 
     startAnim('Walk')
     loop()

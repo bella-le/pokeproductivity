@@ -1,9 +1,11 @@
 const { contextBridge, ipcRenderer } = require('electron')
 
 contextBridge.exposeInMainWorld('electronAPI', {
-  // Ask main process to fetch/cache a sprite file and return a file:// URL
   getSpriteFile: (dexNumber, filename) =>
     ipcRenderer.invoke('get-sprite-file', dexNumber, filename),
+
+  getPortraitFile: (dexNumber, filename) =>
+    ipcRenderer.invoke('get-portrait-file', dexNumber, filename),
 
   // Tell main process to move the window by a delta (for dragging)
   moveWindow: (deltaX, deltaY) =>

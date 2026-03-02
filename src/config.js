@@ -17,7 +17,15 @@ export const DIR = { SOUTH: 0, EAST: 2, WEST: 2 }  // West re-uses East row + fl
 // ─── Config ───────────────────────────────────────────────────────────────────
 
 export const DEX        = '0025'  // Change this to load a different Pokémon (Pikachu = 0025)
-export const SCALE      = 3       // Pixel scale multiplier (3× gives nice chunky pixels)
+export const SCALE      = 2       // Pixel scale multiplier (3× gives nice chunky pixels)
 export const WALK_SPEED = 1.2     // Pixels per frame the pet moves
 export const IDLE_CHANCE = 0.003  // Per-frame probability of stopping to idle
 export const Y_PAD      = 6       // Source-pixel headroom above and below the sprite
+
+// ─── Portraits ────────────────────────────────────────────────────────────────
+
+// Emotions to download; Normal is shown on hover (emotion logic added later)
+export const PORTRAIT_NAMES = ['Normal', 'Happy', 'Sad', 'Angry', 'Worried', 'Inspired', 'Determined']
+export const PORTRAIT_SIZE  = 40   // PMDCollab portraits are always 40×40 source pixels
+export const PORTRAIT_SCALE = 2    // Display scale (40 × 2 = 80px rendered)
+export const PORTRAIT_GAP   = 8    // Screen pixels between portrait bottom and sprite top

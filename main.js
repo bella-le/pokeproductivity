@@ -10,10 +10,15 @@ protocol.registerSchemesAsPrivileged([
 
 // ─── Cache helpers ────────────────────────────────────────────────────────────
 
-const CACHE_DIR = path.join(__dirname, 'sprite-cache')
+const CACHE_DIR         = path.join(__dirname, 'sprite-cache')
+const PORTRAIT_CACHE_DIR = path.join(__dirname, 'portrait-cache')
 
 function cachePath(dexNumber, filename) {
   return path.join(CACHE_DIR, dexNumber, filename)
+}
+
+function portraitCachePath(dexNumber, filename) {
+  return path.join(PORTRAIT_CACHE_DIR, dexNumber, filename)
 }
 
 function ensureDir(filePath) {
@@ -47,14 +52,25 @@ function downloadFile(url, dest) {
 async function fetchSpriteFile(dexNumber, filename) {
   const local = cachePath(dexNumber, filename)
   if (fs.existsSync(local)) {
-    console.log(`[cache hit]  ${dexNumber}/${filename}`)
+    console.log(`[cache hit]  sprite/${dexNumber}/${filename}`)
     return local
   }
-
-  // PMDCollab sprites live directly under sprite/<dex>/ (no form subdirectory for base form)
   const url = `https://raw.githubusercontent.com/PMDCollab/SpriteCollab/master/sprite/${dexNumber}/${filename}`
   console.log(`[download]   ${url}`)
-  console.log(`[cache dir]  ${path.dirname(local)}`)
+  await downloadFile(url, local)
+  console.log(`[saved]      ${local}`)
+  return local
+}
+
+// Fetch a portrait file, caching locally; returns local path
+async function fetchPortraitFile(dexNumber, filename) {
+  const local = portraitCachePath(dexNumber, filename)
+  if (fs.existsSync(local)) {
+    console.log(`[cache hit]  portrait/${dexNumber}/${filename}`)
+    return local
+  }
+  const url = `https://raw.githubusercontent.com/PMDCollab/SpriteCollab/master/portrait/${dexNumber}/${filename}`
+  console.log(`[download]   ${url}`)
   await downloadFile(url, local)
   console.log(`[saved]      ${local}`)
   return local
@@ -62,7 +78,17 @@ async function fetchSpriteFile(dexNumber, filename) {
 
 // ─── IPC handlers ─────────────────────────────────────────────────────────────
 
-// Returns a sprite:// URL for the renderer (downloads and caches if needed)
+// Returns a sprite://portrait/ URL for the renderer (downloads and caches if needed)
+ipcMain.handle('get-portrait-file', async (_event, dexNumber, filename) => {
+  try {
+    await fetchPortraitFile(dexNumber, filename)
+    return { ok: true, url: `sprite://portrait/${dexNumber}/${filename}` }
+  } catch (err) {
+    return { ok: false, error: err.message }
+  }
+})
+
+// Returns a sprite://cache/ URL for the renderer (downloads and caches if needed)
 ipcMain.handle('get-sprite-file', async (_event, dexNumber, filename) => {
   try {
     await fetchSpriteFile(dexNumber, filename)
@@ -114,17 +140,21 @@ function createWindow() {
   // Serve cached sprite files over sprite:// so the renderer can use fetch()
   // and drawImage() without cross-origin file:// restrictions.
   // We read the file with fs rather than net.fetch to avoid file:// URL encoding issues.
+  // sprite://cache/<dex>/<filename>   → sprite-cache    (hostname = "cache")
+  // sprite://portrait/<dex>/<filename> → portrait-cache  (hostname = "portrait")
   protocol.handle('sprite', async (request) => {
-    // URL is sprite://cache/<dexNumber>/<filename>
-    // pathname = "/<dexNumber>/<filename>"
-    const [, dexNumber, filename] = new URL(request.url).pathname.split('/')
+    const parsed = new URL(request.url)
+    const [, dexNumber, filename] = parsed.pathname.split('/')   // pathname = "/<dex>/<file>"
+    const isPortrait = parsed.hostname === 'portrait'
     try {
-      const localPath = await fetchSpriteFile(dexNumber, filename)
+      const localPath = isPortrait
+        ? await fetchPortraitFile(dexNumber, filename)
+        : await fetchSpriteFile(dexNumber, filename)
       const data = fs.readFileSync(localPath)
       const mime = filename.endsWith('.png') ? 'image/png' : 'text/xml; charset=utf-8'
       return new Response(data, { headers: { 'Content-Type': mime } })
     } catch (err) {
-      console.error(`[sprite] ${dexNumber}/${filename}:`, err.message)
+      console.error(`[sprite/${parsed.hostname}] ${dexNumber}/${filename}:`, err.message)
       return new Response(err.message, { status: 404 })
     }
   })

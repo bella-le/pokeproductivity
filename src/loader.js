@@ -77,6 +77,30 @@ export async function computeShadowY(dex, name, anim) {
   }
 }
 
+// ─── Portrait loading ─────────────────────────────────────────────────────────
+// Downloads each named portrait PNG, skipping any that don't exist for this Pokémon.
+// Returns a map of { emotionName: HTMLImageElement }.
+
+export async function loadPortraits(dex, names) {
+  const portraits = {}
+  await Promise.all(names.map(async (name) => {
+    try {
+      const { ok, url, error } = await window.electronAPI.getPortraitFile(dex, `${name}.png`)
+      if (!ok) { console.warn(`[portrait] ${name} unavailable: ${error}`); return }
+      await new Promise((resolve, reject) => {
+        const img = new Image()
+        img.onload  = () => { portraits[name] = img; resolve() }
+        img.onerror = () => { console.warn(`[portrait] failed to load ${name}`); resolve() }
+        img.src = url
+      })
+    } catch (err) {
+      console.warn(`[portrait] ${name} error:`, err.message)
+    }
+  }))
+  console.log(`[portrait] loaded: ${Object.keys(portraits).join(', ')}`)
+  return portraits
+}
+
 // ─── Main loader ──────────────────────────────────────────────────────────────
 // Fetches all sprite data for a Pokémon and returns { animations, sheets, shadowY }.
 // Does not touch the canvas — sizing is the caller's responsibility.
