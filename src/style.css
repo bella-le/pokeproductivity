@@ -9,6 +9,7 @@ html, body {
   height: 100%;
   background: transparent;
   overflow: hidden;
+  position: relative;
 }
 
 #pet-canvas {
@@ -16,4 +17,153 @@ html, body {
   image-rendering: pixelated;
   image-rendering: crisp-edges;
   display: block;
+}
+
+/* ── Pomodoro overlay ──────────────────────────────────────────────────────── */
+
+#pom {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: 10px;
+  overflow: hidden;
+
+  /* Colors driven by --pr/--pg/--pb/--fg set from TASKS_COLOR in JS */
+  background: linear-gradient(135deg,
+    rgba(var(--pr), var(--pg), var(--pb), 0.92) 0%,
+    rgba(var(--pr), var(--pg), var(--pb), 0.82) 100%
+  );
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  border: 1px solid rgba(var(--fg), var(--fg), var(--fg), 0.12);
+  box-shadow: inset 0 1px 0 rgba(var(--fg), var(--fg), var(--fg), 0.08);
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 6px 10px;
+
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+#pom.pom-hidden,
+#pom-running.pom-hidden,
+#pom-config.pom-hidden {
+  display: none !important;
+}
+
+#pom-config,
+#pom-running {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+}
+
+.pom-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: rgba(var(--fg), var(--fg), var(--fg), 0.45);
+}
+
+.pom-input {
+  width: 80%;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 1px;
+  color: rgba(var(--fg), var(--fg), var(--fg), 0.9);
+  background: rgba(var(--fg), var(--fg), var(--fg), 0.07);
+  border: 1px solid rgba(var(--fg), var(--fg), var(--fg), 0.18);
+  border-radius: 6px;
+  padding: 3px 6px;
+  outline: none;
+  font-family: inherit;
+  caret-color: #a78bfa;
+}
+.pom-input::placeholder { color: rgba(var(--fg), var(--fg), var(--fg), 0.25); }
+.pom-input:focus {
+  border-color: rgba(var(--fg), var(--fg), var(--fg), 0.5);
+  box-shadow: 0 0 0 2px rgba(var(--fg), var(--fg), var(--fg), 0.12);
+}
+
+/* ── Running view ─────────────────────────────────────────────────────────── */
+
+.pom-top-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.pom-countdown {
+  font-size: 20px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 1px;
+  color: rgba(var(--fg), var(--fg), var(--fg), 0.95);
+}
+.pom-countdown.done   { color: #4ade80; }
+.pom-countdown.paused { color: #fbbf24; }
+
+.pom-bar {
+  width: 85%;
+  height: 3px;
+  background: rgba(var(--fg), var(--fg), var(--fg), 0.12);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.pom-fill {
+  height: 100%;
+  background: rgba(var(--fg), var(--fg), var(--fg), 0.55);
+  border-radius: 99px;
+  width: 100%;
+  transition: width 1s linear;
+}
+.pom-fill.done { background: #4ade80; }
+
+/* ── Shared buttons ───────────────────────────────────────────────────────── */
+
+.pom-btn-row {
+  display: flex;
+  gap: 5px;
+}
+
+.pom-btn {
+  height: 20px;
+  padding: 0 10px;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  border: 1px solid;
+  transition: filter 0.15s;
+}
+.pom-btn:hover  { filter: brightness(1.2); }
+.pom-btn:active { filter: brightness(0.85); }
+
+.pom-btn-start {
+  background: rgba(var(--fg), var(--fg), var(--fg), 0.18);
+  border-color: rgba(var(--fg), var(--fg), var(--fg), 0.32);
+  color: rgba(var(--fg), var(--fg), var(--fg), 0.9);
+}
+
+.pom-btn-pause {
+  background: rgba(var(--fg), var(--fg), var(--fg), 0.1);
+  border-color: rgba(var(--fg), var(--fg), var(--fg), 0.22);
+  color: rgba(var(--fg), var(--fg), var(--fg), 0.85);
+}
+
+.pom-btn-stop {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.35);
+  color: #fca5a5;
 }

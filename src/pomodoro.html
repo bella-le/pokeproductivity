@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';" />
+  <title>Pomodoro</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      user-select: none;
+      overflow: hidden;
+      height: 100vh;
+      background: transparent;
+    }
+
+    .shell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      height: 100vh;
+      padding: 16px;
+      background: linear-gradient(135deg,
+        rgba(30, 20, 60, 0.88) 0%,
+        rgba(20, 10, 45, 0.82) 100%
+      );
+      backdrop-filter: blur(20px) saturate(1.5);
+      -webkit-backdrop-filter: blur(20px) saturate(1.5);
+      border-radius: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    }
+
+    /* ── Configure view ─────────────────────────────────────────────────────── */
+
+    #view-config {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .pom-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    .time-input {
+      width: 100px;
+      text-align: center;
+      font-size: 28px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 2px;
+      color: #fff;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 10px;
+      padding: 6px 10px;
+      outline: none;
+      -webkit-app-region: no-drag;
+      caret-color: #a78bfa;
+    }
+    .time-input::placeholder { color: rgba(255,255,255,0.25); }
+    .time-input:focus {
+      border-color: rgba(167, 139, 250, 0.6);
+      box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.18);
+    }
+
+    .hint {
+      font-size: 10px;
+      color: rgba(255,255,255,0.28);
+      text-align: center;
+    }
+
+    /* ── Running view ───────────────────────────────────────────────────────── */
+
+    #view-running {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .countdown {
+      font-size: 36px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 3px;
+      color: #fff;
+      line-height: 1;
+    }
+    .countdown.done { color: #4ade80; }
+    .countdown.paused { color: #fbbf24; }
+
+    .progress-bar {
+      width: 100%;
+      height: 3px;
+      background: rgba(255,255,255,0.12);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(to right, #a78bfa, #7c3aed);
+      border-radius: 99px;
+      width: 100%;
+      transition: width 1s linear;
+    }
+    .progress-fill.done { background: #4ade80; }
+
+    /* ── Shared buttons ─────────────────────────────────────────────────────── */
+
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      -webkit-app-region: no-drag;
+    }
+
+    .btn {
+      height: 30px;
+      padding: 0 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      border: 1px solid;
+      -webkit-app-region: no-drag;
+      transition: opacity 0.15s, filter 0.15s;
+    }
+    .btn:hover { filter: brightness(1.15); }
+    .btn:active { filter: brightness(0.9); }
+
+    .btn-start {
+      background: linear-gradient(to bottom, #8b5cf6, #7c3aed);
+      border-color: #6d28d9;
+      color: #fff;
+    }
+
+    .btn-pause {
+      background: rgba(255,255,255,0.1);
+      border-color: rgba(255,255,255,0.2);
+      color: rgba(255,255,255,0.85);
+    }
+
+    .btn-stop {
+      background: rgba(239,68,68,0.15);
+      border-color: rgba(239,68,68,0.35);
+      color: #fca5a5;
+    }
+
+    .btn-restart {
+      background: linear-gradient(to bottom, #8b5cf6, #7c3aed);
+      border-color: #6d28d9;
+      color: #fff;
+    }
+
+    /* ── Drag region ────────────────────────────────────────────────────────── */
+
+    .drag-handle {
+      -webkit-app-region: drag;
+      width: 32px;
+      height: 4px;
+      background: rgba(255,255,255,0.18);
+      border-radius: 99px;
+      margin-bottom: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="drag-handle"></div>
+
+    <!-- Configure view -->
+    <div id="view-config">
+      <span class="pom-label">Pomodoro</span>
+      <input class="time-input" id="time-input" type="text" placeholder="25:00" maxlength="5" />
+      <span class="hint">mm:ss or just minutes</span>
+      <div class="btn-row">
+        <button class="btn btn-start" id="btn-start">▶ Start</button>
+      </div>
+    </div>
+
+    <!-- Running view -->
+    <div id="view-running">
+      <span class="pom-label" id="running-label">Focus</span>
+      <div class="countdown" id="countdown">25:00</div>
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+      <div class="btn-row">
+        <button class="btn btn-pause" id="btn-pause">⏸ Pause</button>
+        <button class="btn btn-stop"  id="btn-stop">■ Stop</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="pomodoro.js"></script>
+</body>
+</html>

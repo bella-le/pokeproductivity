@@ -9,6 +9,34 @@
 </head>
 <body>
   <canvas id="pet-canvas" width="160" height="160"></canvas>
+
+  <!-- Pomodoro overlay — positioned over the portrait zone by JS -->
+  <div id="pom" class="pom-hidden">
+
+    <!-- Configure view -->
+    <div id="pom-config">
+      <span class="pom-label">Pomodoro</span>
+      <input id="pom-input" class="pom-input" type="text" placeholder="25:00" maxlength="5" />
+      <div class="pom-btn-row">
+        <button class="pom-btn pom-btn-start" id="pom-start">▶ Start</button>
+      </div>
+    </div>
+
+    <!-- Running view -->
+    <div id="pom-running" class="pom-hidden">
+      <div class="pom-top-row">
+        <span class="pom-label" id="pom-rlabel">Focus</span>
+        <span class="pom-countdown" id="pom-countdown">25:00</span>
+      </div>
+      <div class="pom-bar"><div class="pom-fill" id="pom-fill"></div></div>
+      <div class="pom-btn-row">
+        <button class="pom-btn pom-btn-pause" id="pom-pause">⏸</button>
+        <button class="pom-btn pom-btn-stop"  id="pom-stop">■</button>
+      </div>
+    </div>
+
+  </div>
+
   <script type="module" src="pet.js"></script>
 </body>
 </html>

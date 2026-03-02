@@ -26,4 +26,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getTasks:          ()      => ipcRenderer.invoke('get-tasks'),
   saveTasks:         (tasks) => ipcRenderer.send('save-tasks', tasks),
   resizeTasksWindow: (h)     => ipcRenderer.send('resize-tasks-window', h),
+
+  // Pomodoro
+  onShowPomodoro: (cb) => ipcRenderer.on('show-pomodoro', () => cb()),
 })

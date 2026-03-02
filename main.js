@@ -222,7 +222,8 @@ ipcMain.on('save-settings', (_event, data) => {
 
 ipcMain.on('show-context-menu', () => {
   const menu = Menu.buildFromTemplate([
-    { label: 'Tasks',    click: openTasksWindow    },
+    { label: 'Tasks',    click: openTasksWindow },
+    { label: 'Pomodoro', click: () => { if (win && !win.isDestroyed()) win.webContents.send('show-pomodoro') } },
     { label: 'Settings', click: openSettingsWindow },
     { type: 'separator' },
     { label: 'Quit', click: () => app.quit() },

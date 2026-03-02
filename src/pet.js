@@ -2,6 +2,7 @@ import { cfg, WALK_SPEED, IDLE_CHANCE, Y_PAD,
          PORTRAIT_NAMES, PORTRAIT_SIZE, PORTRAIT_BORDER, PORTRAIT_GAP, INFO_PANEL_W } from './config.js'
 import { loadPet, loadPortraits } from './loader.js'
 import { init as initAnim, initPortraits, startAnim, stepAnim, drawFrame, setPortrait, setExpanded, setExp } from './animator.js'
+import { initPomodoro, togglePomodoro } from './pomodoro.js'
 
 // ─── Canvas ───────────────────────────────────────────────────────────────────
 
@@ -214,6 +215,10 @@ function loop() {
 
     window.electronAPI.setWindowSize(canvas.width, canvas.height)
     window.electronAPI.moveWindow(0, -portraitAreaH)
+
+    // Pomodoro overlay — covers the portrait zone
+    initPomodoro(canvas.width, portraitAreaH, saved)
+    window.electronAPI.onShowPomodoro(togglePomodoro)
 
     startAnim('Walk')
     loop()
