@@ -20,6 +20,7 @@ const DEX = '0025'       // Change this to load a different Pokémon (Pikachu = 
 const SCALE = 3          // Pixel scale multiplier (3× gives nice chunky pixels)
 const WALK_SPEED = 1.2   // Pixels per frame the pet moves
 const IDLE_CHANCE = 0.003 // Per-frame probability of stopping to idle
+const Y_PAD = 6          // Extra source-pixel headroom above the tallest animation
 
 // ─── State ────────────────────────────────────────────────────────────────────
 
@@ -150,8 +151,8 @@ async function loadPet(dex) {
   const sizedAnims = ['Walk', 'Idle'].filter(n => animations[n])
   const maxFrameW  = Math.max(...sizedAnims.map(n => animations[n].frameWidth))
   const maxGroundY = Math.max(...sizedAnims.map(n => shadowY[n] ?? animations[n].frameHeight))
-  canvas.width  = maxFrameW  * SCALE
-  canvas.height = maxGroundY * SCALE
+  canvas.width  = maxFrameW            * SCALE
+  canvas.height = (maxGroundY + Y_PAD * 2) * SCALE  // Y_PAD on top, Y_PAD on bottom
   ctx.imageSmoothingEnabled = false
   // Resize the native window to exactly match the canvas
   window.electronAPI.setWindowSize(canvas.width, canvas.height)
@@ -212,7 +213,7 @@ function drawFrame() {
   // Shadow-anchor: pin the ground contact point (shadow centroid) to the canvas bottom
   // so all animations share the same visual baseline regardless of frame height.
   const groundY = shadowY[currentAnim] ?? frameHeight
-  const destY   = canvas.height - groundY * SCALE
+  const destY   = canvas.height - (groundY + Y_PAD) * SCALE
 
   ctx.clearRect(0, 0, canvas.width, canvas.height)
 
@@ -269,10 +270,18 @@ function updateWalk() {
 
 canvas.addEventListener('mouseenter', () => {
   window.electronAPI.setIgnoreMouse(false)
+  if (!isDragging) {
+    isWalking = false
+    startAnim('Idle')
+  }
 })
 
 canvas.addEventListener('mouseleave', () => {
-  if (!isDragging) window.electronAPI.setIgnoreMouse(true)
+  if (!isDragging) {
+    window.electronAPI.setIgnoreMouse(true)
+    isWalking = true
+    startAnim('Walk')
+  }
 })
 
 canvas.addEventListener('mousedown', (e) => {
