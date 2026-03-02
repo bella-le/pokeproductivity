@@ -14,6 +14,7 @@ const SETTINGS_FILE = path.join(__dirname, 'settings.json')
 
 const DEFAULT_SETTINGS = {
   DEX:                   '0025',
+  NICKNAME:              'Buddy',
   SCALE:                 2,
   PORTRAIT_SCALE:        1.5,
   PORTRAIT_BORDER_COLOR: '#ffffff',

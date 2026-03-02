@@ -20,6 +20,7 @@ export const DIR = { SOUTH: 0, EAST: 2, WEST: 2 }  // West re-uses East row + fl
 
 export const cfg = {
   DEX:                   '0025',  // Pokémon dex number (zero-padded, e.g. '0001')
+  NICKNAME:              'Buddy', // Display name shown in the info panel
   SCALE:                 2,       // Sprite display scale
   PORTRAIT_SCALE:        1.5,     // Portrait display scale (40 × 1.5 = 60px)
   PORTRAIT_BORDER_COLOR: '#ffffff',
@@ -37,3 +38,5 @@ export const PORTRAIT_BORDER     = 3     // Border width in screen pixels
 export const PORTRAIT_RADIUS     = 8     // Rounded corner radius in screen pixels
 export const PORTRAIT_GAP        = 10    // Gap between portrait bottom and sprite top
 export const PORTRAIT_FADE_SPEED = 0.07  // Opacity change per frame
+
+export const INFO_PANEL_W = 155  // Width of the expanded info panel (px)

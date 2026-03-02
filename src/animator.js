@@ -13,10 +13,19 @@ let currentFrame = 0
 let frameTimer   = 0
 
 // Portrait state
-let _portraits          = {}
-let _currentPortrait    = 'Normal'
-let _portraitOpacity    = 0
+let _portraits             = {}
+let _currentPortrait       = 'Normal'
+let _portraitOpacity       = 0
 let _portraitTargetOpacity = 0
+
+// Expanded info panel state
+let _expandProgress   = 0     // 0 = fully collapsed, 1 = fully expanded
+let _expandTarget     = 0     // 0 or 1
+let _portraitDisplayW = 0     // portrait box width (left edge of info panel)
+const EXPAND_SPEED    = 0.12  // progress per frame (~8 frames to fully expand)
+
+// Placeholder pet data (will be driven by productivity tracking later)
+const _petInfo = { nickname: 'Buddy', level: 1, xp: 35, maxXp: 100 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
@@ -30,6 +39,15 @@ export function init(canvas, ctx, animations, sheets, shadowY) {
 
 export function initPortraits(portraits) {
   _portraits = portraits
+}
+
+export function setExpanded(expanded, portraitDisplayW) {
+  _expandTarget     = expanded ? 1 : 0
+  _portraitDisplayW = portraitDisplayW
+}
+
+export function getExpandProgress() {
+  return _expandProgress
 }
 
 // ─── Animation control ────────────────────────────────────────────────────────
@@ -56,6 +74,65 @@ export function stepAnim() {
 export function setPortrait(name, visible) {
   _currentPortrait       = name
   _portraitTargetOpacity = visible ? 1 : 0
+}
+
+// ─── Info panel drawing ───────────────────────────────────────────────────────
+
+function drawInfoPanel(displaySize) {
+  const panelX = _portraitDisplayW
+  const panelW = _canvas.width - panelX
+  const panelH = displaySize + PORTRAIT_BORDER * 2
+
+  _ctx.save()
+  _ctx.globalAlpha = _portraitOpacity * _expandProgress  // fades in/out with expansion
+
+  // Dark background with rounded right corners (left edge flush with portrait)
+  _ctx.fillStyle = 'rgba(15, 15, 25, 0.82)'
+  _ctx.beginPath()
+  _ctx.roundRect(panelX, 0, panelW, panelH, [0, PORTRAIT_RADIUS + PORTRAIT_BORDER, PORTRAIT_RADIUS + PORTRAIT_BORDER, 0])
+  _ctx.fill()
+
+  const pad   = 10
+  const textX = panelX + pad
+
+  _ctx.textBaseline = 'top'
+
+  // Nickname (left) + Level (right) on the same line
+  _ctx.font      = `bold 12px -apple-system, system-ui, sans-serif`
+  _ctx.fillStyle = '#ffffff'
+  _ctx.fillText(cfg.NICKNAME, textX, PORTRAIT_BORDER + 6)
+
+  _ctx.font      = `11px -apple-system, system-ui, sans-serif`
+  _ctx.fillStyle = 'rgba(255,255,255,0.6)'
+  _ctx.textAlign = 'right'
+  _ctx.fillText(`Lv. ${_petInfo.level}`, panelX + panelW - pad, PORTRAIT_BORDER + 7)
+  _ctx.textAlign = 'left'
+
+  // XP bar
+  const barX  = textX
+  const barY  = PORTRAIT_BORDER + 28
+  const barW  = panelW - pad * 2
+  const barH  = 7
+  const fillW = barW * Math.min(_petInfo.xp / _petInfo.maxXp, 1)
+
+  _ctx.fillStyle = 'rgba(255,255,255,0.15)'
+  _ctx.beginPath()
+  _ctx.roundRect(barX, barY, barW, barH, 3.5)
+  _ctx.fill()
+
+  if (fillW > 0) {
+    _ctx.fillStyle = '#4ade80'
+    _ctx.beginPath()
+    _ctx.roundRect(barX, barY, fillW, barH, 3.5)
+    _ctx.fill()
+  }
+
+  // XP label
+  _ctx.font      = `10px -apple-system, system-ui, sans-serif`
+  _ctx.fillStyle = 'rgba(255,255,255,0.5)'
+  _ctx.fillText(`${_petInfo.xp} / ${_petInfo.maxXp} XP`, barX, barY + barH + 5)
+
+  _ctx.restore()
 }
 
 // ─── Portrait drawing helper ──────────────────────────────────────────────────
@@ -117,21 +194,33 @@ export function drawFrame(dirX) {
     _portraitOpacity = Math.max(0, Math.min(1, _portraitOpacity + step))
   }
 
-  // Portrait — centered horizontally, offset down by PORTRAIT_BORDER so the border fits
+  // Advance expansion animation
+  if (_expandProgress !== _expandTarget) {
+    const step = _expandTarget > _expandProgress ? EXPAND_SPEED : -EXPAND_SPEED
+    _expandProgress = Math.max(0, Math.min(1, _expandProgress + step))
+  }
+
+  // Portrait: centered in canvas when collapsed, slides left to PORTRAIT_BORDER when expanded
   if (_portraitOpacity > 0 && _portraits[_currentPortrait]) {
     const displaySize = PORTRAIT_SIZE * cfg.PORTRAIT_SCALE
-    const px = Math.round((_canvas.width - displaySize) / 2)
+    const collapsedX  = Math.round((_canvas.width - displaySize) / 2)
+    const px          = Math.round(collapsedX + (PORTRAIT_BORDER - collapsedX) * _expandProgress)
+    if (_expandProgress > 0) drawInfoPanel(displaySize)  // drawn first so portrait renders on top
     drawPortrait(_portraits[_currentPortrait], px, PORTRAIT_BORDER, displaySize)
   }
 
-  // Sprite
+  // Sprite: always centered horizontally in the canvas
+  const spriteX = Math.round((_canvas.width - destW) / 2)
   if (flipH) {
     _ctx.save()
-    _ctx.translate(destW, 0)  // flip within the sprite's own width, not the full canvas
+    _ctx.translate(spriteX + destW, 0)
     _ctx.scale(-1, 1)
+    _ctx.drawImage(sheet, srcX, srcY, frameWidth, frameHeight, 0, destY, destW, destH)
+    _ctx.restore()
+    return
   }
 
-  _ctx.drawImage(sheet, srcX, srcY, frameWidth, frameHeight, 0, destY, destW, destH)
+  _ctx.drawImage(sheet, srcX, srcY, frameWidth, frameHeight, spriteX, destY, destW, destH)
 
   if (flipH) _ctx.restore()
 }

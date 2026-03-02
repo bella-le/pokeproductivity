@@ -1,6 +1,7 @@
 {
-  "DEX": "0025",
+  "DEX": "0700",
+  "NICKNAME": "peche",
   "SCALE": 2,
   "PORTRAIT_SCALE": 1.5,
-  "PORTRAIT_BORDER_COLOR": "#f09999"
+  "PORTRAIT_BORDER_COLOR": "#ffffff"
 }
