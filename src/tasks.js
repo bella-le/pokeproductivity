@@ -1,11 +1,28 @@
 // ─── Type palette ─────────────────────────────────────────────────────────────
 
+let _isLight = false   // set after settings load, before render()
+
 const TYPE_COLORS = {
-  Todo:      { bg: 'rgba(59,130,246,0.22)',  border: 'rgba(59,130,246,0.45)',  text: '#93c5fd' },
-  Habit:     { bg: 'rgba(16,185,129,0.22)',  border: 'rgba(16,185,129,0.45)',  text: '#6ee7b7' },
-  Daily:     { bg: 'rgba(245,158,11,0.22)',  border: 'rgba(245,158,11,0.45)',  text: '#fcd34d' },
-  Quest:     { bg: 'rgba(139,92,246,0.22)',  border: 'rgba(139,92,246,0.45)',  text: '#c4b5fd' },
-  Challenge: { bg: 'rgba(239,68,68,0.22)',   border: 'rgba(239,68,68,0.45)',   text: '#fca5a5' },
+  Todo:      {
+    dark:  { bg: 'rgba(59,130,246,0.22)',  border: 'rgba(59,130,246,0.45)',  text: '#93c5fd' },
+    light: { bg: 'rgba(37,99,235,0.12)',   border: 'rgba(37,99,235,0.35)',   text: '#1d4ed8' },
+  },
+  Habit:     {
+    dark:  { bg: 'rgba(16,185,129,0.22)',  border: 'rgba(16,185,129,0.45)',  text: '#6ee7b7' },
+    light: { bg: 'rgba(4,120,87,0.12)',    border: 'rgba(4,120,87,0.35)',    text: '#047857' },
+  },
+  Daily:     {
+    dark:  { bg: 'rgba(245,158,11,0.22)',  border: 'rgba(245,158,11,0.45)',  text: '#fcd34d' },
+    light: { bg: 'rgba(180,83,9,0.12)',    border: 'rgba(180,83,9,0.35)',    text: '#b45309' },
+  },
+  Quest:     {
+    dark:  { bg: 'rgba(139,92,246,0.22)',  border: 'rgba(139,92,246,0.45)',  text: '#c4b5fd' },
+    light: { bg: 'rgba(109,40,217,0.12)',  border: 'rgba(109,40,217,0.35)',  text: '#6d28d9' },
+  },
+  Challenge: {
+    dark:  { bg: 'rgba(239,68,68,0.22)',   border: 'rgba(239,68,68,0.45)',   text: '#fca5a5' },
+    light: { bg: 'rgba(185,28,28,0.12)',   border: 'rgba(185,28,28,0.35)',   text: '#b91c1c' },
+  },
 }
 
 // ─── Due-date helper ──────────────────────────────────────────────────────────
@@ -26,7 +43,8 @@ function dueMeta(dateStr) {
 // ─── Build a task card element ────────────────────────────────────────────────
 
 function buildCard(task) {
-  const col  = TYPE_COLORS[task.type] ?? TYPE_COLORS.Todo
+  const palette = TYPE_COLORS[task.type] ?? TYPE_COLORS.Todo
+  const col     = _isLight ? palette.light : palette.dark
   const card = document.createElement('div')
   card.className  = 'task-card'
   card.dataset.id = task.id
@@ -128,9 +146,12 @@ async function render() {
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 
-// Apply side from URL query param (?side=left|right) set by main process
-const _side = new URLSearchParams(window.location.search).get('side') ?? 'right'
+// Apply side + rounded from URL query params set by main process
+const _params  = new URLSearchParams(window.location.search)
+const _side    = _params.get('side') ?? 'right'
+const _rounded = _params.get('rounded') !== 'false'
 document.body.dataset.side = _side
+if (_rounded) document.querySelector('.shell').classList.add('rounded')
 
 // Apply panel color from settings
 ;(async () => {
@@ -145,7 +166,12 @@ document.body.dataset.side = _side
   root.style.setProperty('--pb', b)
   // Perceived luminance — flip to black text on light backgrounds
   const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255
-  root.style.setProperty('--fg', luminance > 0.4 ? 0 : 255)
+  _isLight = luminance > 0.4
+  root.style.setProperty('--fg', _isLight ? 0 : 255)
+  // Due label shadow: dark drop shadow on light backgrounds so colored labels stay readable
+  root.style.setProperty('--due-shadow', _isLight ? '0 1px 3px rgba(0,0,0,0.45)' : 'none')
+  // Render after colors are resolved so badge palette is correct
+  render()
 })()
 
 // ─── Collapse / expand ────────────────────────────────────────────────────────
@@ -164,7 +190,7 @@ function updateCollapseBtn() {
 }
 
 function configuredHeight() {
-  const h = parseInt(new URLSearchParams(window.location.search).get('height') ?? '600', 10)
+  const h = parseInt(_params.get('height') ?? '600', 10)
   return Math.min(h, screen.height - 40)
 }
 
@@ -200,4 +226,3 @@ _collapseBtn.addEventListener('click', async () => {
 })
 
 updateCollapseBtn()
-render()

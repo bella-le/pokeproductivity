@@ -22,6 +22,7 @@ const DEFAULT_SETTINGS = {
   TASKS_SIDE:            'right',
   TASKS_HEIGHT:          600,
   TASKS_COLOR:           '#060612',
+  TASKS_ROUNDED:         true,
 }
 
 function loadSettings() {
@@ -241,6 +242,7 @@ function openTasksWindow() {
   const winW     = 250
   const winH     = Math.min(settings.TASKS_HEIGHT ?? 600, sh - 40)
   const x        = side === 'left' ? 16 : sw - winW - 16
+  const rounded = settings.TASKS_ROUNDED ?? true
   tasksWin = new BrowserWindow({
     width: winW,
     height: winH,
@@ -252,6 +254,7 @@ function openTasksWindow() {
     skipTaskbar: true,
     resizable: false,
     hasShadow: false,
+    roundedCorners: rounded,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -259,7 +262,7 @@ function openTasksWindow() {
     },
   })
   tasksWin.setMenu(null)
-  tasksWin.loadFile(path.join(__dirname, 'src', 'tasks.html'), { query: { side, height: String(winH) } })
+  tasksWin.loadFile(path.join(__dirname, 'src', 'tasks.html'), { query: { side, height: String(winH), rounded: String(rounded) } })
   tasksWin.on('closed', () => { tasksWin = null })
 }
 

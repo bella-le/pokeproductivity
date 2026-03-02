@@ -28,10 +28,12 @@
       overflow: hidden;
       /* Right-docked default: dark on right, fades left toward screen center */
       background: linear-gradient(to left,
-        rgba(var(--pr), var(--pg), var(--pb), 0.6)  0%,
-        rgba(var(--pr), var(--pg), var(--pb), 0.28) 55%,
+        rgba(var(--pr), var(--pg), var(--pb), 0.8)  0%,
+        rgba(var(--pr), var(--pg), var(--pb), 0.28) 75%,
         transparent                                  100%
       );
+      backdrop-filter: blur(18px) saturate(1.4);
+      -webkit-backdrop-filter: blur(18px) saturate(1.4);
       transition: height 0.28s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
@@ -75,11 +77,23 @@
       display: flex;
       flex-direction: column;
       gap: 8px;
-      overflow-y: auto;
+      overflow-y: scroll;
       flex: 1;
       transition: opacity 0.22s ease, transform 0.22s ease;
     }
-    .task-list::-webkit-scrollbar { display: none; }
+    .task-list::-webkit-scrollbar {
+      width: 3px;
+    }
+    .task-list::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .task-list::-webkit-scrollbar-thumb {
+      background: rgba(var(--fg), var(--fg), var(--fg), 0.18);
+      border-radius: 99px;
+    }
+    .task-list::-webkit-scrollbar-thumb:hover {
+      background: rgba(var(--fg), var(--fg), var(--fg), 0.35);
+    }
     .task-list.collapsing {
       opacity: 0;
       transform: translateY(-6px);
@@ -93,7 +107,7 @@
       align-items: flex-start;
       gap: 9px;
       padding: 10px 11px;
-      background: rgba(var(--pr), var(--pg), var(--pb), 0.55);
+      background: rgba(var(--pr), var(--pg), var(--pb), 0.75);
       backdrop-filter: blur(24px);
       -webkit-backdrop-filter: blur(24px);
       border-radius: 15px;
@@ -163,10 +177,13 @@
     .due-label {
       font-size: 11px;
       color: rgba(var(--fg), var(--fg), var(--fg), 0.35);
+      text-shadow: var(--due-shadow, none);
     }
     .due-label.soon  { color: #fbbf24; }
     .due-label.today { color: #fb923c; }
     .due-label.over  { color: #f87171; }
+
+    .shell.rounded { border-radius: 18px; }
 
     /* ── Right-docked overrides ──────────────────────────────────────────────── */
 
@@ -181,14 +198,19 @@
       padding: 18px 18px 20px 16px;
       /* Left-docked: dark on left, fades right toward screen center */
       background: linear-gradient(to right,
-        rgba(var(--pr), var(--pg), var(--pb), 0.6)  0%,
-        rgba(var(--pr), var(--pg), var(--pb), 0.28) 55%,
+        rgba(var(--pr), var(--pg), var(--pb), 0.8)  0%,
+        rgba(var(--pr), var(--pg), var(--pb), 0.28) 75%,
         transparent                                  100%
       );
     }
 
-    /* Tick moves to right, body text stays left-aligned */
+    /* Scrollbar on left side */
+    body[data-side="left"] .task-list {
+      direction: rtl;
+    }
+    /* Keep card content left-to-right */
     body[data-side="left"] .task-card {
+      direction: ltr;
       flex-direction: row-reverse;
     }
 

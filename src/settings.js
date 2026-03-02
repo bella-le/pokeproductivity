@@ -8,7 +8,8 @@
   document.getElementById('borderColor').value  = settings.PORTRAIT_BORDER_COLOR ?? '#ffffff'
   document.getElementById('tasksSide').value    = settings.TASKS_SIDE            ?? 'right'
   document.getElementById('tasksHeight').value  = settings.TASKS_HEIGHT           ?? 600
-  document.getElementById('tasksColor').value   = settings.TASKS_COLOR            ?? '#060612'
+  document.getElementById('tasksColor').value    = settings.TASKS_COLOR            ?? '#060612'
+  document.getElementById('tasksRounded').checked = settings.TASKS_ROUNDED          ?? true
 
   document.getElementById('save').addEventListener('click', () => {
     window.electronAPI.saveSettings({
@@ -20,6 +21,7 @@
       TASKS_SIDE:            document.getElementById('tasksSide').value,
       TASKS_HEIGHT:          parseInt(document.getElementById('tasksHeight').value, 10),
       TASKS_COLOR:           document.getElementById('tasksColor').value,
+      TASKS_ROUNDED:         document.getElementById('tasksRounded').checked,
     })
   })
 })()
