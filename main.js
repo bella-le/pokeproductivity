@@ -76,8 +76,16 @@ ipcMain.handle('get-sprite-file', async (_event, dexNumber, filename) => {
 
 // Drag / auto-walk: move window by a pixel delta
 ipcMain.on('move-window', (_event, deltaX, deltaY) => {
+  if (!win || win.isDestroyed()) return
+  const { width: sw } = screen.getPrimaryDisplay().workAreaSize
+  const { height: fullH } = screen.getPrimaryDisplay().bounds  // full height, past the Dock
+  const [winW] = win.getSize()
   const [x, y] = win.getPosition()
-  win.setPosition(Math.round(x + deltaX), Math.round(y + deltaY))
+  // X: clamp to work area width. Y: clamp to full screen height so the pet can sit behind the Dock.
+  const nx = Math.round(Math.max(0, Math.min(sw - winW, x + deltaX)))
+  // Y: allow dragging all the way to the physical bottom (behind/below the Dock)
+  const ny = Math.round(Math.max(0, Math.min(fullH, y + deltaY)))
+  if (Number.isFinite(nx) && Number.isFinite(ny)) win.setPosition(nx, ny)
 })
 
 // Mouse pass-through toggle
@@ -88,6 +96,12 @@ ipcMain.on('set-ignore-mouse', (_event, ignore) => {
 // Renderer needs the window's current screen position to initialise posX
 ipcMain.handle('get-window-pos', () => {
   return win ? win.getPosition() : [0, 0]
+})
+
+// Renderer tells us the canvas size after sprites load so we can resize the window to match
+ipcMain.on('set-window-size', (_event, w, h) => {
+  if (!win || win.isDestroyed()) return
+  win.setSize(Math.round(w), Math.round(h))
 })
 
 // ─── Window ───────────────────────────────────────────────────────────────────

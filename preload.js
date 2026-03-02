@@ -16,4 +16,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Get the window's current [x, y] screen position (used to init walk state)
   getWindowPos: () =>
     ipcRenderer.invoke('get-window-pos'),
+
+  // Resize the native window to match the canvas after sprites are loaded
+  setWindowSize: (w, h) =>
+    ipcRenderer.send('set-window-size', w, h),
 })

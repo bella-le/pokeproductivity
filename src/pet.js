@@ -24,7 +24,7 @@ const IDLE_CHANCE = 0.003 // Per-frame probability of stopping to idle
 // ─── State ────────────────────────────────────────────────────────────────────
 
 const canvas = document.getElementById('pet-canvas')
-const ctx    = canvas.getContext('2d')
+const ctx    = canvas.getContext('2d', { willReadFrequently: true })
 
 let animations = {}   // { Walk: { frameWidth, frameHeight, durations }, Idle: {...} }
 let sheets     = {}   // { Walk: { south: HTMLImageElement, east: HTMLImageElement } }
@@ -106,11 +106,18 @@ async function loadPet(dex) {
     sheets[name] = await loadSpriteImage(dex, `${name}-Anim.png`)
   }
 
-  // 3. Resize canvas to fit the largest frame * scale
-  const walkAnim = animations['Walk'] || animations['Idle']
-  canvas.width  = walkAnim.frameWidth  * SCALE
-  canvas.height = walkAnim.frameHeight * SCALE
+  // 3. Size canvas to the largest frame used by Walk/Idle only — other animations
+  //    (Attack, Sleep, etc.) can have much bigger frames and would push the sprite
+  //    off-screen if included in the max. Bottom-anchoring then aligns the two
+  //    animations on the same ground line so there's no jump on idle.
+  const usedAnims = ['Walk', 'Idle'].filter(n => animations[n]).map(n => animations[n])
+  const maxFrameW = Math.max(...usedAnims.map(a => a.frameWidth))
+  const maxFrameH = Math.max(...usedAnims.map(a => a.frameHeight))
+  canvas.width  = maxFrameW * SCALE
+  canvas.height = maxFrameH * SCALE
   ctx.imageSmoothingEnabled = false
+  // Resize the native window to exactly match the canvas
+  window.electronAPI.setWindowSize(canvas.width, canvas.height)
 
   // 4. Start in walking state
   startAnim('Walk')
@@ -161,21 +168,25 @@ function drawFrame() {
     }
   }
 
-  const srcX = currentFrame * frameWidth
-  const srcY = dirRow       * frameHeight
+  const srcX  = currentFrame * frameWidth
+  const srcY  = dirRow       * frameHeight
+  const destW = frameWidth   * SCALE
+  const destH = frameHeight  * SCALE
+  // Bottom-anchor: pin every animation's feet to the same canvas baseline
+  const destY = canvas.height - destH
 
   ctx.clearRect(0, 0, canvas.width, canvas.height)
 
   if (flipH) {
     ctx.save()
-    ctx.translate(canvas.width, 0)
+    ctx.translate(destW, 0)  // flip within the sprite's own width, not the full canvas
     ctx.scale(-1, 1)
   }
 
   ctx.drawImage(
     sheet,
-    srcX, srcY, frameWidth, frameHeight,   // source rect
-    0,    0,    frameWidth * SCALE, frameHeight * SCALE  // dest rect (scaled)
+    srcX, srcY, frameWidth, frameHeight,  // source rect
+    0, destY, destW, destH                // dest rect (scaled, bottom-anchored)
   )
 
   if (flipH) ctx.restore()
@@ -191,8 +202,8 @@ function updateWalk() {
     posX += dx
     window.electronAPI.moveWindow(dx, 0)  // actually move the window across the screen
 
-    // Bounce off screen edges (use window width = 160 as the footprint)
-    const WIN_W = 160
+    // Bounce off screen edges using the actual canvas/window width
+    const WIN_W = canvas.width
     if (posX <= 0) {
       posX = 0
       dirX = 1
@@ -240,9 +251,13 @@ window.addEventListener('mousemove', (e) => {
   window.electronAPI.moveWindow(dx, dy)
 })
 
-window.addEventListener('mouseup', () => {
+window.addEventListener('mouseup', async () => {
   if (isDragging) {
     isDragging = false
+    // Re-sync posX with where the window actually landed after the drag,
+    // otherwise the bounds check uses a stale value and the pet walks off-screen.
+    const [wx] = await window.electronAPI.getWindowPos()
+    posX = wx
     window.electronAPI.setIgnoreMouse(true)
   }
 })
