@@ -27,7 +27,8 @@ const canvas = document.getElementById('pet-canvas')
 const ctx    = canvas.getContext('2d', { willReadFrequently: true })
 
 let animations = {}   // { Walk: { frameWidth, frameHeight, durations }, Idle: {...} }
-let sheets     = {}   // { Walk: { south: HTMLImageElement, east: HTMLImageElement } }
+let sheets     = {}   // { Walk: HTMLImageElement, Idle: HTMLImageElement, ... }
+let shadowY    = {}   // { Walk: 20, Idle: 18, Hurt: 22 } — ground-anchor Y in source pixels
 
 let currentAnim  = null   // currently playing animation key ("Walk" | "Idle")
 let currentFrame = 0
@@ -91,6 +92,39 @@ async function loadSpriteImage(dex, filename) {
   })
 }
 
+// Parse a shadow PNG for an animation to find the ground-anchor Y (in source pixels).
+// The shadow is an ellipse drawn below the character's feet; its centroid Y = ground contact.
+// Returns frameHeight as a safe fallback if the shadow PNG is missing or unreadable.
+async function computeShadowY(dex, name, anim) {
+  const dirRow = (name === 'Walk') ? DIR.EAST : DIR.SOUTH
+  try {
+    const img  = await loadSpriteImage(dex, `${name}-Shadow.png`)
+    const oc   = document.createElement('canvas')
+    oc.width   = anim.frameWidth
+    oc.height  = anim.frameHeight
+    const octx = oc.getContext('2d', { willReadFrequently: true })
+
+    let sumY = 0, count = 0
+    for (let f = 0; f < anim.frameCount; f++) {
+      octx.clearRect(0, 0, oc.width, oc.height)
+      octx.drawImage(
+        img,
+        f * anim.frameWidth, dirRow * anim.frameHeight, anim.frameWidth, anim.frameHeight,
+        0, 0, anim.frameWidth, anim.frameHeight
+      )
+      const { data } = octx.getImageData(0, 0, anim.frameWidth, anim.frameHeight)
+      for (let y = 0; y < anim.frameHeight; y++) {
+        for (let x = 0; x < anim.frameWidth; x++) {
+          if (data[(y * anim.frameWidth + x) * 4 + 3] > 10) { sumY += y; count++ }
+        }
+      }
+    }
+    return count > 0 ? Math.round(sumY / count) : anim.frameHeight
+  } catch {
+    return anim.frameHeight  // fallback: bottom-anchor (same as before)
+  }
+}
+
 async function loadPet(dex) {
   // 1. Fetch and parse AnimData.xml
   const { ok, url, error } = await window.electronAPI.getSpriteFile(dex, 'AnimData.xml')
@@ -100,21 +134,24 @@ async function loadPet(dex) {
   const xmlText   = await xmlResp.text()
   animations      = parseAnimXML(xmlText)
 
-  // 2. Load the spritesheets we actually need
-  const needed = ['Walk', 'Idle'].filter(n => animations[n])
+  // 2. Load the spritesheets and compute ground-anchor Y for each animation
+  const needed = ['Walk', 'Idle', 'Hurt'].filter(n => animations[n])
   for (const name of needed) {
-    sheets[name] = await loadSpriteImage(dex, `${name}-Anim.png`)
+    sheets[name]  = await loadSpriteImage(dex, `${name}-Anim.png`)
+    shadowY[name] = await computeShadowY(dex, name, animations[name])
+    console.log(`[shadow] ${name}: groundY=${shadowY[name]}px (frameH=${animations[name].frameHeight})`)
   }
 
-  // 3. Size canvas to the largest frame used by Walk/Idle only — other animations
-  //    (Attack, Sleep, etc.) can have much bigger frames and would push the sprite
-  //    off-screen if included in the max. Bottom-anchoring then aligns the two
-  //    animations on the same ground line so there's no jump on idle.
-  const usedAnims = ['Walk', 'Idle'].filter(n => animations[n]).map(n => animations[n])
-  const maxFrameW = Math.max(...usedAnims.map(a => a.frameWidth))
-  const maxFrameH = Math.max(...usedAnims.map(a => a.frameHeight))
-  canvas.width  = maxFrameW * SCALE
-  canvas.height = maxFrameH * SCALE
+  // 3. Size canvas so the tallest "above-ground" extent (Walk or Idle) fits.
+  //    Hurt is excluded from sizing to avoid inflating the window; it will
+  //    clip at the top if taller than the canvas, which is acceptable.
+  //    canvas.height = max shadowY across Walk/Idle, so the ground line sits
+  //    exactly at the canvas bottom and all animations share the same baseline.
+  const sizedAnims = ['Walk', 'Idle'].filter(n => animations[n])
+  const maxFrameW  = Math.max(...sizedAnims.map(n => animations[n].frameWidth))
+  const maxGroundY = Math.max(...sizedAnims.map(n => shadowY[n] ?? animations[n].frameHeight))
+  canvas.width  = maxFrameW  * SCALE
+  canvas.height = maxGroundY * SCALE
   ctx.imageSmoothingEnabled = false
   // Resize the native window to exactly match the canvas
   window.electronAPI.setWindowSize(canvas.width, canvas.height)
@@ -172,8 +209,10 @@ function drawFrame() {
   const srcY  = dirRow       * frameHeight
   const destW = frameWidth   * SCALE
   const destH = frameHeight  * SCALE
-  // Bottom-anchor: pin every animation's feet to the same canvas baseline
-  const destY = canvas.height - destH
+  // Shadow-anchor: pin the ground contact point (shadow centroid) to the canvas bottom
+  // so all animations share the same visual baseline regardless of frame height.
+  const groundY = shadowY[currentAnim] ?? frameHeight
+  const destY   = canvas.height - groundY * SCALE
 
   ctx.clearRect(0, 0, canvas.width, canvas.height)
 
@@ -240,6 +279,7 @@ canvas.addEventListener('mousedown', (e) => {
   isDragging = true
   dragStartX = e.screenX
   dragStartY = e.screenY
+  startAnim('Hurt')  // show hurt/grabbed face while dragging
 })
 
 window.addEventListener('mousemove', (e) => {
@@ -258,6 +298,9 @@ window.addEventListener('mouseup', async () => {
     // otherwise the bounds check uses a stale value and the pet walks off-screen.
     const [wx] = await window.electronAPI.getWindowPos()
     posX = wx
+    // Resume walking after being dropped
+    isWalking = true
+    startAnim('Walk')
     window.electronAPI.setIgnoreMouse(true)
   }
 })
