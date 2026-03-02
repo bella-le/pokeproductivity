@@ -1,7 +1,7 @@
 import { cfg, WALK_SPEED, IDLE_CHANCE, Y_PAD,
          PORTRAIT_NAMES, PORTRAIT_SIZE, PORTRAIT_BORDER, PORTRAIT_GAP, INFO_PANEL_W } from './config.js'
 import { loadPet, loadPortraits } from './loader.js'
-import { init as initAnim, initPortraits, startAnim, stepAnim, drawFrame, setPortrait, setExpanded } from './animator.js'
+import { init as initAnim, initPortraits, startAnim, stepAnim, drawFrame, setPortrait, setExpanded, setExp } from './animator.js'
 
 // ─── Canvas ───────────────────────────────────────────────────────────────────
 
@@ -176,8 +176,12 @@ function loop() {
 ;(async () => {
   try {
     // Merge saved settings into cfg before anything reads from it
-    const saved = await window.electronAPI.getSettings()
+    const [saved, progress] = await Promise.all([
+      window.electronAPI.getSettings(),
+      window.electronAPI.getProgress(),
+    ])
     Object.assign(cfg, saved)
+    setExp(progress.exp ?? 0)
 
     const [winX] = await window.electronAPI.getWindowPos()
     posX = winX

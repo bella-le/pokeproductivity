@@ -17,4 +17,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Settings
   getSettings:  ()     => ipcRenderer.invoke('get-settings'),
   saveSettings: (data) => ipcRenderer.send('save-settings', data),
+
+  // Progress
+  getProgress:  ()     => ipcRenderer.invoke('get-progress'),
+  saveProgress: (data) => ipcRenderer.send('save-progress', data),
 })

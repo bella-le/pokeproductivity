@@ -10,7 +10,8 @@ protocol.registerSchemesAsPrivileged([
 
 // ─── Settings ─────────────────────────────────────────────────────────────────
 
-const SETTINGS_FILE = path.join(__dirname, 'settings.json')
+const DEFAULTS_FILE      = path.join(__dirname, 'settings.json')         // shipped defaults
+const USER_SETTINGS_FILE = path.join(app.getPath('userData'), 'settings.json')  // user-saved cache
 
 const DEFAULT_SETTINGS = {
   DEX:                   '0025',
@@ -21,22 +22,42 @@ const DEFAULT_SETTINGS = {
 }
 
 function loadSettings() {
-  try {
-    const data = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8'))
-    return { ...DEFAULT_SETTINGS, ...data }
-  } catch {
-    return { ...DEFAULT_SETTINGS }
+  // Prefer user-saved settings; fall back to shipped defaults file, then hardcoded defaults
+  for (const file of [USER_SETTINGS_FILE, DEFAULTS_FILE]) {
+    try {
+      const data = JSON.parse(fs.readFileSync(file, 'utf8'))
+      return { ...DEFAULT_SETTINGS, ...data }
+    } catch { /* try next */ }
   }
+  return { ...DEFAULT_SETTINGS }
 }
 
 function saveSettings(data) {
-  fs.writeFileSync(SETTINGS_FILE, JSON.stringify(data, null, 2))
+  fs.mkdirSync(path.dirname(USER_SETTINGS_FILE), { recursive: true })
+  fs.writeFileSync(USER_SETTINGS_FILE, JSON.stringify(data, null, 2))
+}
+
+// ─── Progress ─────────────────────────────────────────────────────────────────
+
+const PROGRESS_FILE = path.join(app.getPath('userData'), 'progress.json')
+
+function loadProgress() {
+  try {
+    return JSON.parse(fs.readFileSync(PROGRESS_FILE, 'utf8'))
+  } catch {
+    return { exp: 0 }
+  }
+}
+
+function saveProgress(data) {
+  fs.mkdirSync(path.dirname(PROGRESS_FILE), { recursive: true })
+  fs.writeFileSync(PROGRESS_FILE, JSON.stringify(data, null, 2))
 }
 
 // ─── Cache helpers ────────────────────────────────────────────────────────────
 
-const CACHE_DIR          = path.join(__dirname, 'sprite-cache')
-const PORTRAIT_CACHE_DIR = path.join(__dirname, 'portrait-cache')
+const CACHE_DIR          = path.join(app.getPath('userData'), 'sprite-cache')
+const PORTRAIT_CACHE_DIR = path.join(app.getPath('userData'), 'portrait-cache')
 
 function cachePath(dexNumber, filename) {
   return path.join(CACHE_DIR, dexNumber, filename)
@@ -147,6 +168,9 @@ ipcMain.on('set-window-size', (_event, w, h) => {
 })
 
 ipcMain.handle('get-settings', () => loadSettings())
+
+ipcMain.handle('get-progress', () => loadProgress())
+ipcMain.on('save-progress', (_event, data) => saveProgress(data))
 
 ipcMain.on('save-settings', (_event, data) => {
   saveSettings(data)

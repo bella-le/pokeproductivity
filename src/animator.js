@@ -24,8 +24,7 @@ let _expandTarget     = 0     // 0 or 1
 let _portraitDisplayW = 0     // portrait box width (left edge of info panel)
 const EXPAND_SPEED    = 0.12  // progress per frame (~8 frames to fully expand)
 
-// Placeholder pet data (will be driven by productivity tracking later)
-const _petInfo = { nickname: 'Buddy', level: 1, xp: 35, maxXp: 100 }
+let _exp = 0  // total tasks completed; level = floor(exp/10)+1, displayXp = exp%10
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
@@ -48,6 +47,10 @@ export function setExpanded(expanded, portraitDisplayW) {
 
 export function getExpandProgress() {
   return _expandProgress
+}
+
+export function setExp(exp) {
+  _exp = exp
 }
 
 // ─── Animation control ────────────────────────────────────────────────────────
@@ -105,7 +108,9 @@ function drawInfoPanel(displaySize) {
   _ctx.font      = `11px -apple-system, system-ui, sans-serif`
   _ctx.fillStyle = 'rgba(255,255,255,0.6)'
   _ctx.textAlign = 'right'
-  _ctx.fillText(`Lv. ${_petInfo.level}`, panelX + panelW - pad, PORTRAIT_BORDER + 7)
+  const level     = Math.floor(_exp / 10) + 1
+  const displayXp = _exp % 10
+  _ctx.fillText(`Lv. ${level}`, panelX + panelW - pad, PORTRAIT_BORDER + 7)
   _ctx.textAlign = 'left'
 
   // XP bar
@@ -113,7 +118,7 @@ function drawInfoPanel(displaySize) {
   const barY  = PORTRAIT_BORDER + 28
   const barW  = panelW - pad * 2
   const barH  = 7
-  const fillW = barW * Math.min(_petInfo.xp / _petInfo.maxXp, 1)
+  const fillW = barW * (displayXp / 10)
 
   _ctx.fillStyle = 'rgba(255,255,255,0.15)'
   _ctx.beginPath()
@@ -130,7 +135,7 @@ function drawInfoPanel(displaySize) {
   // XP label
   _ctx.font      = `10px -apple-system, system-ui, sans-serif`
   _ctx.fillStyle = 'rgba(255,255,255,0.5)'
-  _ctx.fillText(`${_petInfo.xp} / ${_petInfo.maxXp} XP`, barX, barY + barH + 5)
+  _ctx.fillText(`${displayXp} / 10 XP`, barX, barY + barH + 5)
 
   _ctx.restore()
 }
