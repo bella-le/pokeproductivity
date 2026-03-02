@@ -1,0 +1,19 @@
+const { contextBridge, ipcRenderer } = require('electron')
+
+contextBridge.exposeInMainWorld('electronAPI', {
+  // Ask main process to fetch/cache a sprite file and return a file:// URL
+  getSpriteFile: (dexNumber, filename) =>
+    ipcRenderer.invoke('get-sprite-file', dexNumber, filename),
+
+  // Tell main process to move the window by a delta (for dragging)
+  moveWindow: (deltaX, deltaY) =>
+    ipcRenderer.send('move-window', deltaX, deltaY),
+
+  // Tell main process whether clicks should pass through the window
+  setIgnoreMouse: (ignore) =>
+    ipcRenderer.send('set-ignore-mouse', ignore),
+
+  // Get the window's current [x, y] screen position (used to init walk state)
+  getWindowPos: () =>
+    ipcRenderer.invoke('get-window-pos'),
+})
