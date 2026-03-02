@@ -79,6 +79,25 @@
       flex: 0 0 72px;
     }
 
+    .row select {
+      height: 22px;
+      padding: 0 6px;
+      border-radius: 5px;
+      border: 1px solid #adadad;
+      background: #fff;
+      color: #1d1d1f;
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+      box-shadow: inset 0 1px 2px rgba(0,0,0,.08);
+      cursor: pointer;
+    }
+
+    .row select:focus {
+      border-color: #0077ed;
+      box-shadow: inset 0 1px 2px rgba(0,0,0,.08), 0 0 0 3px rgba(0,119,237,.25);
+    }
+
     /* Separator */
     .sep {
       border: none;
@@ -159,6 +178,26 @@
     <div class="row">
       <label for="borderColor">Portrait border color</label>
       <input id="borderColor" type="color" />
+    </div>
+
+    <hr class="sep" />
+
+    <div class="row">
+      <label for="tasksSide">Tasks panel side</label>
+      <select id="tasksSide">
+        <option value="right">Right</option>
+        <option value="left">Left</option>
+      </select>
+    </div>
+
+    <div class="row">
+      <label for="tasksHeight">Tasks panel height</label>
+      <input id="tasksHeight" type="number" min="200" max="1200" step="20" />
+    </div>
+
+    <div class="row">
+      <label for="tasksColor">Tasks panel color</label>
+      <input id="tasksColor" type="color" />
     </div>
   </div>
 

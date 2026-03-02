@@ -21,4 +21,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Progress
   getProgress:  ()     => ipcRenderer.invoke('get-progress'),
   saveProgress: (data) => ipcRenderer.send('save-progress', data),
+
+  // Tasks
+  getTasks:          ()      => ipcRenderer.invoke('get-tasks'),
+  saveTasks:         (tasks) => ipcRenderer.send('save-tasks', tasks),
+  resizeTasksWindow: (h)     => ipcRenderer.send('resize-tasks-window', h),
 })

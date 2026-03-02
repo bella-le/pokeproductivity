@@ -19,6 +19,9 @@ const DEFAULT_SETTINGS = {
   SCALE:                 2,
   PORTRAIT_SCALE:        1.5,
   PORTRAIT_BORDER_COLOR: '#ffffff',
+  TASKS_SIDE:            'right',
+  TASKS_HEIGHT:          600,
+  TASKS_COLOR:           '#060612',
 }
 
 function loadSettings() {
@@ -52,6 +55,32 @@ function loadProgress() {
 function saveProgress(data) {
   fs.mkdirSync(path.dirname(PROGRESS_FILE), { recursive: true })
   fs.writeFileSync(PROGRESS_FILE, JSON.stringify(data, null, 2))
+}
+
+// ─── Tasks ────────────────────────────────────────────────────────────────────
+
+const TASKS_FILE = path.join(app.getPath('userData'), 'tasks.json')
+
+const DEFAULT_TASKS = [
+  { id: 1, title: 'Morning meditation',        type: 'Habit',     dueDate: null,         completed: false },
+  { id: 2, title: 'Submit project proposal',   type: 'Todo',      dueDate: '2026-03-04', completed: false },
+  { id: 3, title: 'Read for 30 minutes',       type: 'Daily',     dueDate: null,         completed: false },
+  { id: 4, title: 'Defeat the dungeon boss',   type: 'Challenge', dueDate: '2026-03-07', completed: false },
+  { id: 5, title: 'Drink 8 glasses of water',  type: 'Daily',     dueDate: null,         completed: false },
+  { id: 6, title: 'Explore a new framework',   type: 'Quest',     dueDate: '2026-03-15', completed: false },
+]
+
+function loadTasks() {
+  try {
+    return JSON.parse(fs.readFileSync(TASKS_FILE, 'utf8'))
+  } catch {
+    return [...DEFAULT_TASKS]
+  }
+}
+
+function saveTasks(tasks) {
+  fs.mkdirSync(path.dirname(TASKS_FILE), { recursive: true })
+  fs.writeFileSync(TASKS_FILE, JSON.stringify(tasks, null, 2))
 }
 
 // ─── Cache helpers ────────────────────────────────────────────────────────────
@@ -167,25 +196,72 @@ ipcMain.on('set-window-size', (_event, w, h) => {
   win.setSize(Math.round(w), Math.round(h))
 })
 
+ipcMain.on('resize-tasks-window', (_event, h) => {
+  if (!tasksWin || tasksWin.isDestroyed()) return
+  const [w] = tasksWin.getSize()
+  tasksWin.setSize(w, Math.round(h))
+})
+
 ipcMain.handle('get-settings', () => loadSettings())
 
 ipcMain.handle('get-progress', () => loadProgress())
 ipcMain.on('save-progress', (_event, data) => saveProgress(data))
 
+ipcMain.handle('get-tasks', () => loadTasks())
+ipcMain.on('save-tasks', (_event, tasks) => saveTasks(tasks))
+
 ipcMain.on('save-settings', (_event, data) => {
   saveSettings(data)
   if (settingsWin && !settingsWin.isDestroyed()) settingsWin.close()
+  const wasTasksOpen = tasksWin && !tasksWin.isDestroyed()
+  if (wasTasksOpen) tasksWin.close()
   if (win && !win.isDestroyed()) win.reload()
+  if (wasTasksOpen) openTasksWindow()
 })
 
 ipcMain.on('show-context-menu', () => {
   const menu = Menu.buildFromTemplate([
+    { label: 'Tasks',    click: openTasksWindow    },
     { label: 'Settings', click: openSettingsWindow },
     { type: 'separator' },
     { label: 'Quit', click: () => app.quit() },
   ])
   menu.popup({ window: win })
 })
+
+// ─── Tasks window ─────────────────────────────────────────────────────────────
+
+let tasksWin = null
+
+function openTasksWindow() {
+  if (tasksWin && !tasksWin.isDestroyed()) { tasksWin.focus(); return }
+  const { width: sw, height: sh } = screen.getPrimaryDisplay().workAreaSize
+  const settings = loadSettings()
+  const side     = settings.TASKS_SIDE   ?? 'right'
+  const winW     = 250
+  const winH     = Math.min(settings.TASKS_HEIGHT ?? 600, sh - 40)
+  const x        = side === 'left' ? 16 : sw - winW - 16
+  tasksWin = new BrowserWindow({
+    width: winW,
+    height: winH,
+    x,
+    y: 20,
+    frame: false,
+    transparent: true,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    resizable: false,
+    hasShadow: false,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, 'preload.js'),
+    },
+  })
+  tasksWin.setMenu(null)
+  tasksWin.loadFile(path.join(__dirname, 'src', 'tasks.html'), { query: { side, height: String(winH) } })
+  tasksWin.on('closed', () => { tasksWin = null })
+}
 
 // ─── Settings window ──────────────────────────────────────────────────────────
 

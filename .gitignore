@@ -2,3 +2,5 @@ node_modules
 .claude
 sprite-cache
 portrait-cache
+dist
+.DS_Store
