@@ -1,25 +1,20 @@
 const { contextBridge, ipcRenderer } = require('electron')
 
 contextBridge.exposeInMainWorld('electronAPI', {
-  getSpriteFile: (dexNumber, filename) =>
-    ipcRenderer.invoke('get-sprite-file', dexNumber, filename),
+  // Sprite / portrait fetching
+  getSpriteFile:   (dexNumber, filename) => ipcRenderer.invoke('get-sprite-file', dexNumber, filename),
+  getPortraitFile: (dexNumber, filename) => ipcRenderer.invoke('get-portrait-file', dexNumber, filename),
 
-  getPortraitFile: (dexNumber, filename) =>
-    ipcRenderer.invoke('get-portrait-file', dexNumber, filename),
+  // Window control
+  moveWindow:    (deltaX, deltaY) => ipcRenderer.send('move-window', deltaX, deltaY),
+  setIgnoreMouse:(ignore)         => ipcRenderer.send('set-ignore-mouse', ignore),
+  getWindowPos:  ()               => ipcRenderer.invoke('get-window-pos'),
+  setWindowSize: (w, h)           => ipcRenderer.send('set-window-size', w, h),
 
-  // Tell main process to move the window by a delta (for dragging)
-  moveWindow: (deltaX, deltaY) =>
-    ipcRenderer.send('move-window', deltaX, deltaY),
+  // Context menu
+  showContextMenu: () => ipcRenderer.send('show-context-menu'),
 
-  // Tell main process whether clicks should pass through the window
-  setIgnoreMouse: (ignore) =>
-    ipcRenderer.send('set-ignore-mouse', ignore),
-
-  // Get the window's current [x, y] screen position (used to init walk state)
-  getWindowPos: () =>
-    ipcRenderer.invoke('get-window-pos'),
-
-  // Resize the native window to match the canvas after sprites are loaded
-  setWindowSize: (w, h) =>
-    ipcRenderer.send('set-window-size', w, h),
+  // Settings
+  getSettings:  ()     => ipcRenderer.invoke('get-settings'),
+  saveSettings: (data) => ipcRenderer.send('save-settings', data),
 })

@@ -1,6 +1,4 @@
-import { DIR, SCALE, Y_PAD,
-         PORTRAIT_SIZE, PORTRAIT_SCALE, PORTRAIT_BORDER, PORTRAIT_RADIUS,
-         PORTRAIT_FADE_SPEED } from './config.js'
+import { DIR, cfg, PORTRAIT_SIZE, PORTRAIT_BORDER, PORTRAIT_RADIUS, PORTRAIT_FADE_SPEED, Y_PAD } from './config.js'
 
 // ─── State ────────────────────────────────────────────────────────────────────
 
@@ -17,8 +15,8 @@ let frameTimer   = 0
 // Portrait state
 let _portraits          = {}
 let _currentPortrait    = 'Normal'
-let _portraitOpacity    = 0   // current rendered opacity (0–1)
-let _portraitTargetOpacity = 0   // 0 = hidden, 1 = visible
+let _portraitOpacity    = 0
+let _portraitTargetOpacity = 0
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
@@ -66,8 +64,8 @@ function drawPortrait(img, x, y, displaySize) {
   _ctx.save()
   _ctx.globalAlpha = _portraitOpacity
 
-  // White border — a slightly larger rounded rect drawn behind the image
-  _ctx.fillStyle = 'white'
+  // Colored border — a slightly larger rounded rect drawn behind the image
+  _ctx.fillStyle = cfg.PORTRAIT_BORDER_COLOR
   _ctx.beginPath()
   _ctx.roundRect(
     x - PORTRAIT_BORDER,
@@ -106,10 +104,10 @@ export function drawFrame(dirX) {
 
   const srcX    = currentFrame * frameWidth
   const srcY    = dirRow       * frameHeight
-  const destW   = frameWidth   * SCALE
-  const destH   = frameHeight  * SCALE
+  const destW   = frameWidth   * cfg.SCALE
+  const destH   = frameHeight  * cfg.SCALE
   const groundY = _shadowY[currentAnim] ?? frameHeight
-  const destY   = _canvas.height - (groundY + Y_PAD) * SCALE
+  const destY   = _canvas.height - (groundY + Y_PAD) * cfg.SCALE
 
   _ctx.clearRect(0, 0, _canvas.width, _canvas.height)
 
@@ -121,7 +119,7 @@ export function drawFrame(dirX) {
 
   // Portrait — centered horizontally, offset down by PORTRAIT_BORDER so the border fits
   if (_portraitOpacity > 0 && _portraits[_currentPortrait]) {
-    const displaySize = PORTRAIT_SIZE * PORTRAIT_SCALE
+    const displaySize = PORTRAIT_SIZE * cfg.PORTRAIT_SCALE
     const px = Math.round((_canvas.width - displaySize) / 2)
     drawPortrait(_portraits[_currentPortrait], px, PORTRAIT_BORDER, displaySize)
   }

@@ -1,5 +1,5 @@
-import { DEX, SCALE, WALK_SPEED, IDLE_CHANCE, Y_PAD,
-         PORTRAIT_NAMES, PORTRAIT_SIZE, PORTRAIT_SCALE, PORTRAIT_BORDER, PORTRAIT_GAP } from './config.js'
+import { cfg, WALK_SPEED, IDLE_CHANCE, Y_PAD,
+         PORTRAIT_NAMES, PORTRAIT_SIZE, PORTRAIT_BORDER, PORTRAIT_GAP } from './config.js'
 import { loadPet, loadPortraits } from './loader.js'
 import { init as initAnim, initPortraits, startAnim, stepAnim, drawFrame, setPortrait } from './animator.js'
 
@@ -48,6 +48,10 @@ function updateWalk() {
 
 // ─── Input / drag ─────────────────────────────────────────────────────────────
 
+canvas.addEventListener('contextmenu', () => {
+  window.electronAPI.showContextMenu()
+})
+
 canvas.addEventListener('mouseenter', () => {
   window.electronAPI.setIgnoreMouse(false)
   if (!isDragging) {
@@ -67,6 +71,7 @@ canvas.addEventListener('mouseleave', () => {
 })
 
 canvas.addEventListener('mousedown', (e) => {
+  if (e.button !== 0) return  // only left-click starts drag
   isDragging = true
   dragStartX = e.screenX
   dragStartY = e.screenY
@@ -117,36 +122,34 @@ function loop() {
 
 ;(async () => {
   try {
+    // Merge saved settings into cfg before anything reads from it
+    const saved = await window.electronAPI.getSettings()
+    Object.assign(cfg, saved)
+
     const [winX] = await window.electronAPI.getWindowPos()
     posX = winX
 
     const [{ animations, sheets, shadowY }, portraits] = await Promise.all([
-      loadPet(DEX),
-      loadPortraits(DEX, PORTRAIT_NAMES),
+      loadPet(cfg.DEX),
+      loadPortraits(cfg.DEX, PORTRAIT_NAMES),
     ])
 
     initAnim(canvas, ctx, animations, sheets, shadowY)
     initPortraits(portraits)
 
     // ── Canvas sizing ────────────────────────────────────────────────────────
-    // Sprite area: sized to Walk/Idle shadow anchors + breathing room
     const sizedAnims  = ['Walk', 'Idle'].filter(n => animations[n])
     const maxFrameW   = Math.max(...sizedAnims.map(n => animations[n].frameWidth))
     const maxGroundY  = Math.max(...sizedAnims.map(n => shadowY[n] ?? animations[n].frameHeight))
-    const spriteAreaH = (maxGroundY + Y_PAD * 2) * SCALE
+    const spriteAreaH = (maxGroundY + Y_PAD * 2) * cfg.SCALE
 
-    // Portrait area: sits above the sprite, always allocated (transparent when not hovering).
-    // +PORTRAIT_BORDER top and bottom so the border doesn't clip against the canvas edge.
-    const portraitDisplayW = PORTRAIT_SIZE * PORTRAIT_SCALE + PORTRAIT_BORDER * 2
-    const portraitAreaH    = PORTRAIT_SIZE * PORTRAIT_SCALE + PORTRAIT_BORDER * 2 + PORTRAIT_GAP
+    const portraitDisplayW = PORTRAIT_SIZE * cfg.PORTRAIT_SCALE + PORTRAIT_BORDER * 2
+    const portraitAreaH    = PORTRAIT_SIZE * cfg.PORTRAIT_SCALE + PORTRAIT_BORDER * 2 + PORTRAIT_GAP
 
-    // Canvas must be wide enough for whichever is wider: the sprite or the portrait + its border.
-    canvas.width  = Math.max(maxFrameW * SCALE, portraitDisplayW)
+    canvas.width  = Math.max(maxFrameW * cfg.SCALE, portraitDisplayW)
     canvas.height = portraitAreaH + spriteAreaH
     ctx.imageSmoothingEnabled = false
 
-    // Resize the window to fit both areas, then shift it UP so the sprite's
-    // feet stay at the same screen position (setSize expands downward by default).
     window.electronAPI.setWindowSize(canvas.width, canvas.height)
     window.electronAPI.moveWindow(0, -portraitAreaH)
 
