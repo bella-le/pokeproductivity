@@ -2,7 +2,7 @@ import { cfg, WALK_SPEED, IDLE_CHANCE, Y_PAD,
          PORTRAIT_NAMES, PORTRAIT_SIZE, PORTRAIT_BORDER, PORTRAIT_GAP, INFO_PANEL_W } from './config.js'
 import { loadPet, loadPortraits } from './loader.js'
 import { init as initAnim, initPortraits, startAnim, stepAnim, drawFrame, setPortrait, setExpanded, setExp } from './animator.js'
-import { initPomodoro, togglePomodoro } from './pomodoro.js'
+import { initPomodoro, togglePomodoro, isPomodoroControlling } from './pomodoro.js'
 
 // ─── Canvas ───────────────────────────────────────────────────────────────────
 
@@ -29,7 +29,16 @@ let _portraitZoneH = 0  // height of portrait box in px (set during boot) — us
 
 // ─── Hover state ──────────────────────────────────────────────────────────────
 
-let isOverOpaque = false  // true when cursor is over an opaque pixel (sprite or portrait)
+let isOverOpaque    = false    // true when cursor is over an opaque pixel (sprite or portrait)
+let _hoverPortrait  = 'Normal' // portrait shown on hover; temporarily 'Determined' after pomodoro stop
+let _hoverResetTimer = null    // handle for the post-stop portrait reset timeout
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function resumeWalkAfterDelay() {
+  const pauseFrames = Math.floor(Math.random() * 240) + 120
+  setTimeout(() => { if (!isDragging && !isExpanded && !isPomodoroControlling()) { isWalking = true; startAnim('Walk') } }, pauseFrames * (1000 / 60))
+}
 
 // ─── Walk AI ──────────────────────────────────────────────────────────────────
 
@@ -51,8 +60,12 @@ function updateWalk() {
   if (!isExpanded && (Math.random() < IDLE_CHANCE)) {
     isWalking = false
     startAnim('Idle')
-    const pauseFrames = Math.floor(Math.random() * 240) + 120
-    setTimeout(() => { if (!isDragging && !isExpanded) { isWalking = true; startAnim('Walk') } }, pauseFrames * (1000 / 60))
+    resumeWalkAfterDelay()
+  }
+
+  // Occasionally randomly flip X
+  if (!isExpanded && (Math.random() < IDLE_CHANCE)) {
+    dirX *= -1
   }
 }
 
@@ -76,10 +89,9 @@ canvas.addEventListener('mouseleave', () => {
   if (isDragging) return
   if (isOverOpaque) {
     isOverOpaque = false
-    setPortrait('Normal', false)
-    if (!isExpanded) {
-      const pauseFrames = Math.floor(Math.random() * 240) + 120
-      setTimeout(() => { if (!isDragging && !isExpanded) { isWalking = true; startAnim('Walk') } }, pauseFrames * (1000 / 60))
+    if (!isPomodoroControlling()) {
+      setPortrait('Normal', false)
+      if (!isExpanded) resumeWalkAfterDelay()
     }
   }
   window.electronAPI.setIgnoreMouse(true)
@@ -115,7 +127,7 @@ window.addEventListener('mouseup', async () => {
   isDragging = false
   const [wx] = await window.electronAPI.getWindowPos()
   posX = wx
-  if (!isExpanded) {
+  if (!isExpanded && !isPomodoroControlling()) {
     isWalking = true
     startAnim('Walk')
   }
@@ -133,14 +145,17 @@ canvas.addEventListener('mousemove', (e) => {
 
     if (opaque && !isOverOpaque) {
       isOverOpaque = true
-      isWalking = false
-      startAnim('Idle')
-      setPortrait('Normal', true)
+      if (!isPomodoroControlling()) {
+        isWalking = false
+        startAnim('Idle')
+        setPortrait(_hoverPortrait, true)
+      }
     } else if (!opaque && isOverOpaque) {
       isOverOpaque = false
-      setPortrait('Normal', false)
-      const pauseFrames = Math.floor(Math.random() * 240) + 120
-      setTimeout(() => { if (!isDragging && !isExpanded) { isWalking = true; startAnim('Walk') } }, pauseFrames * (1000 / 60))
+      if (!isPomodoroControlling()) {
+        setPortrait('Normal', false)
+        resumeWalkAfterDelay()
+      }
     }
   } catch {
     window.electronAPI.setIgnoreMouse(false)
@@ -217,7 +232,31 @@ function loop() {
     window.electronAPI.moveWindow(0, -portraitAreaH)
 
     // Pomodoro overlay — covers the portrait zone
-    initPomodoro(canvas.width, portraitAreaH, saved)
+    initPomodoro(canvas.width, portraitAreaH, saved, {
+      onStart: () => {
+        clearTimeout(_hoverResetTimer)
+        _hoverPortrait = 'Normal'
+        isWalking = false
+        startAnim('Sleep')
+        setPortrait('Normal', false)
+      },
+      onPause: () => {
+        startAnim('Idle')
+      },
+      onResume: () => {
+        startAnim('Sleep')
+      },
+      onStop: () => {
+        _hoverPortrait = 'Determined'
+        if (!isDragging && !isExpanded) { isWalking = true; startAnim('Walk') }
+        clearTimeout(_hoverResetTimer)
+        _hoverResetTimer = setTimeout(() => { _hoverPortrait = 'Normal' }, 60_000)
+      },
+      onComplete: () => {
+        startAnim('Hop')
+        setPortrait('Happy', true)
+      },
+    })
     window.electronAPI.onShowPomodoro(togglePomodoro)
 
     startAnim('Walk')

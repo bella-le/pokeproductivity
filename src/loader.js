@@ -114,11 +114,16 @@ export async function loadPet(dex) {
 
   const sheets  = {}
   const shadowY = {}
-  for (const name of ['Walk', 'Idle', 'Hurt'].filter(n => animations[n])) {
-    sheets[name]  = await loadSpriteImage(dex, `${name}-Anim.png`)
-    shadowY[name] = await computeShadowY(dex, name, animations[name])
-    console.log(`[shadow] ${name}: groundY=${shadowY[name]}px (frameH=${animations[name].frameHeight})`)
-  }
+  const names = ['Walk', 'Idle', 'Hurt', 'Sleep', 'Hop'].filter(n => animations[n])
+  await Promise.all(names.map(async name => {
+    const [sheet, sy] = await Promise.all([
+      loadSpriteImage(dex, `${name}-Anim.png`),
+      computeShadowY(dex, name, animations[name]),
+    ])
+    sheets[name]  = sheet
+    shadowY[name] = sy
+    console.log(`[shadow] ${name}: groundY=${sy}px (frameH=${animations[name].frameHeight})`)
+  }))
 
   return { animations, sheets, shadowY }
 }

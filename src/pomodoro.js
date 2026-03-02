@@ -1,7 +1,7 @@
 // ─── Pomodoro overlay module ───────────────────────────────────────────────────
 // Embedded inside the pet window so the timer moves with the sprite.
-// Call initPomodoro(w, h, settings) once after canvas is sized, then
-// togglePomodoro() each time the context menu item is clicked.
+// Call initPomodoro(w, h, settings, callbacks) once after canvas is sized,
+// then togglePomodoro() each time the context menu item is clicked.
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -31,6 +31,10 @@ let _remaining = 0
 let _paused    = false
 let _done      = false
 let _interval  = null
+
+// ─── Callbacks (set by initPomodoro) ──────────────────────────────────────────
+
+let _onStart, _onPause, _onResume, _onStop, _onComplete
 
 // ─── Elements (populated in initPomodoro) ─────────────────────────────────────
 
@@ -74,6 +78,7 @@ function tick() {
     _btnStop.textContent = '↩ Reset'
     _btnStop.classList.remove('pom-btn-stop')
     _btnStop.classList.add('pom-btn-start')
+    _onComplete()
   }
 }
 
@@ -97,21 +102,34 @@ function startTimer(secs) {
   updateDisplay()
   showRunning()
   _interval = setInterval(tick, 1000)
+  _onStart()
 }
 
-function resetTimer() {
+function resetTimer(wasAborted) {
   clearInterval(_interval)
-  _interval  = null
-  _done      = false
-  _paused    = false
+  _interval = null
+  _done     = false
+  _paused   = false
   _countdown.classList.remove('done', 'paused')
   _fill.classList.remove('done')
   showConfig()
+  if (wasAborted) _onStop()
 }
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+// True when the timer has been started and hasn't completed or been reset yet
+function _isActive() { return !!_interval || _paused }
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
-export function initPomodoro(overlayW, overlayH, settings) {
+export function initPomodoro(overlayW, overlayH, settings, callbacks = {}) {
+  _onStart    = callbacks.onStart    ?? (() => {})
+  _onPause    = callbacks.onPause    ?? (() => {})
+  _onResume   = callbacks.onResume   ?? (() => {})
+  _onStop     = callbacks.onStop     ?? (() => {})
+  _onComplete = callbacks.onComplete ?? (() => {})
+
   _pom       = document.getElementById('pom')
   _config    = document.getElementById('pom-config')
   _running   = document.getElementById('pom-running')
@@ -138,7 +156,7 @@ export function initPomodoro(overlayW, overlayH, settings) {
   _pom.style.setProperty('--pb', b)
   _pom.style.setProperty('--fg', fg)
 
-  // Mouse events: enable pointer events on the overlay so buttons work
+  // Mouse passthrough: enable pointer events on the overlay so buttons work
   _pom.addEventListener('mouseenter', () => window.electronAPI.setIgnoreMouse(false))
   _pom.addEventListener('mouseleave', () => { if (!_pom.classList.contains('pom-hidden')) window.electronAPI.setIgnoreMouse(true) })
 
@@ -153,8 +171,8 @@ export function initPomodoro(overlayW, overlayH, settings) {
   document.getElementById('pom-start').addEventListener('click', () => {
     const secs = parseInput(_input.value)
     if (!secs || secs <= 0) {
-      _input.style.borderColor = 'rgba(var(--fg), var(--fg), var(--fg), 0.6)'
-      _input.style.boxShadow   = '0 0 0 2px rgba(var(--fg), var(--fg), var(--fg), 0.2)'
+      _input.style.borderColor = 'rgba(239,68,68,0.6)'
+      _input.style.boxShadow   = '0 0 0 2px rgba(239,68,68,0.2)'
       setTimeout(() => { _input.style.borderColor = ''; _input.style.boxShadow = '' }, 800)
       return
     }
@@ -166,14 +184,30 @@ export function initPomodoro(overlayW, overlayH, settings) {
     _paused = !_paused
     _btnPause.textContent = _paused ? '▶' : '⏸'
     _countdown.classList.toggle('paused', _paused)
+    if (_paused) _onPause()
+    else         _onResume()
   })
 
-  _btnStop.addEventListener('click', resetTimer)
+  _btnStop.addEventListener('click', () => {
+    resetTimer(_isActive())
+  })
+
+  // Close (×) button
+  document.getElementById('pom-close').addEventListener('click', () => {
+    resetTimer(_isActive())
+    _pom.classList.add('pom-hidden')
+  })
+}
+
+// Returns true while the pomodoro owns the pet's animation state
+// (timer running, paused, or showing the Done/Hop state)
+export function isPomodoroControlling() {
+  if (!_pom || _pom.classList.contains('pom-hidden')) return false
+  return !!_interval || _paused || _done
 }
 
 export function togglePomodoro() {
   _pom.classList.toggle('pom-hidden')
-  // Reset to config view whenever it's reopened after being hidden
   if (!_pom.classList.contains('pom-hidden') && !_interval && !_done) {
     showConfig()
     _input.focus()

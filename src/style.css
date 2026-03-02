@@ -56,6 +56,31 @@ html, body {
   display: none !important;
 }
 
+.pom-close {
+  position: absolute;
+  top: 4px;
+  right: 5px;
+  width: 16px;
+  height: 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  color: rgba(var(--fg), var(--fg), var(--fg), 0.35);
+  padding: 0;
+  font-family: inherit;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s, background 0.15s;
+}
+.pom-close:hover {
+  color: rgba(var(--fg), var(--fg), var(--fg), 0.8);
+  background: rgba(var(--fg), var(--fg), var(--fg), 0.1);
+}
+
 #pom-config,
 #pom-running {
   display: flex;
