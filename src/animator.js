@@ -1,4 +1,6 @@
-import { DIR, SCALE, Y_PAD, PORTRAIT_SIZE, PORTRAIT_SCALE, PORTRAIT_GAP } from './config.js'
+import { DIR, SCALE, Y_PAD,
+         PORTRAIT_SIZE, PORTRAIT_SCALE, PORTRAIT_BORDER, PORTRAIT_RADIUS,
+         PORTRAIT_FADE_SPEED } from './config.js'
 
 // ─── State ────────────────────────────────────────────────────────────────────
 
@@ -13,9 +15,10 @@ let currentFrame = 0
 let frameTimer   = 0
 
 // Portrait state
-let _portraits       = {}
-let _currentPortrait = 'Normal'
-let _portraitVisible = false
+let _portraits          = {}
+let _currentPortrait    = 'Normal'
+let _portraitOpacity    = 0   // current rendered opacity (0–1)
+let _portraitTargetOpacity = 0   // 0 = hidden, 1 = visible
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
@@ -53,8 +56,35 @@ export function stepAnim() {
 // ─── Portrait control ─────────────────────────────────────────────────────────
 
 export function setPortrait(name, visible) {
-  _currentPortrait = name
-  _portraitVisible = visible
+  _currentPortrait       = name
+  _portraitTargetOpacity = visible ? 1 : 0
+}
+
+// ─── Portrait drawing helper ──────────────────────────────────────────────────
+
+function drawPortrait(img, x, y, displaySize) {
+  _ctx.save()
+  _ctx.globalAlpha = _portraitOpacity
+
+  // White border — a slightly larger rounded rect drawn behind the image
+  _ctx.fillStyle = 'white'
+  _ctx.beginPath()
+  _ctx.roundRect(
+    x - PORTRAIT_BORDER,
+    y - PORTRAIT_BORDER,
+    displaySize + PORTRAIT_BORDER * 2,
+    displaySize + PORTRAIT_BORDER * 2,
+    PORTRAIT_RADIUS + PORTRAIT_BORDER
+  )
+  _ctx.fill()
+
+  // Clip the image to a rounded rect, then draw it
+  _ctx.beginPath()
+  _ctx.roundRect(x, y, displaySize, displaySize, PORTRAIT_RADIUS)
+  _ctx.clip()
+  _ctx.drawImage(img, 0, 0, PORTRAIT_SIZE, PORTRAIT_SIZE, x, y, displaySize, displaySize)
+
+  _ctx.restore()
 }
 
 // ─── Drawing ──────────────────────────────────────────────────────────────────
@@ -83,11 +113,17 @@ export function drawFrame(dirX) {
 
   _ctx.clearRect(0, 0, _canvas.width, _canvas.height)
 
-  // Portrait — drawn at the top of the canvas, centered horizontally
-  if (_portraitVisible && _portraits[_currentPortrait]) {
-    const pd = PORTRAIT_SIZE * PORTRAIT_SCALE
-    const px = Math.round((_canvas.width - pd) / 2)
-    _ctx.drawImage(_portraits[_currentPortrait], 0, 0, PORTRAIT_SIZE, PORTRAIT_SIZE, px, 0, pd, pd)
+  // Fade portrait opacity toward its target each frame
+  if (_portraitOpacity !== _portraitTargetOpacity) {
+    const step = _portraitTargetOpacity > _portraitOpacity ? PORTRAIT_FADE_SPEED : -PORTRAIT_FADE_SPEED
+    _portraitOpacity = Math.max(0, Math.min(1, _portraitOpacity + step))
+  }
+
+  // Portrait — centered horizontally, offset down by PORTRAIT_BORDER so the border fits
+  if (_portraitOpacity > 0 && _portraits[_currentPortrait]) {
+    const displaySize = PORTRAIT_SIZE * PORTRAIT_SCALE
+    const px = Math.round((_canvas.width - displaySize) / 2)
+    drawPortrait(_portraits[_currentPortrait], px, PORTRAIT_BORDER, displaySize)
   }
 
   // Sprite

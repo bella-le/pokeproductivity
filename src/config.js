@@ -25,7 +25,10 @@ export const Y_PAD      = 6       // Source-pixel headroom above and below the s
 // ─── Portraits ────────────────────────────────────────────────────────────────
 
 // Emotions to download; Normal is shown on hover (emotion logic added later)
-export const PORTRAIT_NAMES = ['Normal', 'Happy', 'Sad', 'Angry', 'Worried', 'Inspired', 'Determined']
-export const PORTRAIT_SIZE  = 40   // PMDCollab portraits are always 40×40 source pixels
-export const PORTRAIT_SCALE = 2    // Display scale (40 × 2 = 80px rendered)
-export const PORTRAIT_GAP   = 8    // Screen pixels between portrait bottom and sprite top
+export const PORTRAIT_NAMES      = ['Normal', 'Happy', 'Sad', 'Angry', 'Worried', 'Inspired', 'Determined']
+export const PORTRAIT_SIZE       = 40   // PMDCollab source size (always 40×40 px)
+export const PORTRAIT_SCALE      = 1.5    // Display scale — change this to resize the portrait (80px at 2×)
+export const PORTRAIT_BORDER     = 3    // White border width in screen pixels
+export const PORTRAIT_RADIUS     = 8    // Rounded corner radius in screen pixels
+export const PORTRAIT_GAP        = 10   // Screen pixels between portrait bottom and sprite top
+export const PORTRAIT_FADE_SPEED = 0.07 // Opacity change per frame (1/0.07 ≈ 14 frames to fully fade)
