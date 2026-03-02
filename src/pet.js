@@ -76,6 +76,7 @@ canvas.addEventListener('mousedown', (e) => {
   dragStartX = e.screenX
   dragStartY = e.screenY
   startAnim('Hurt')
+  setPortrait('Dizzy', true)
 })
 
 window.addEventListener('mousemove', (e) => {

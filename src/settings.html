@@ -9,101 +9,159 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: system-ui, -apple-system, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
       font-size: 13px;
-      background: #1e1e2e;
-      color: #cdd6f4;
-      padding: 20px;
+      background: #ececec;
+      color: #1d1d1f;
       user-select: none;
     }
 
-    h2 {
-      font-size: 15px;
-      font-weight: 600;
-      margin-bottom: 16px;
-      color: #cba6f7;
-    }
-
-    .field {
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-      margin-bottom: 14px;
-    }
-
-    label {
-      color: #a6adc8;
-      font-size: 12px;
-    }
-
-    input[type="text"],
-    input[type="number"] {
-      width: 100%;
-      padding: 6px 10px;
-      border-radius: 6px;
-      border: 1px solid #45475a;
-      background: #313244;
-      color: #cdd6f4;
+    /* Title bar */
+    .titlebar {
+      background: linear-gradient(to bottom, #d8d8d8, #c8c8c8);
+      border-bottom: 1px solid #b0b0b0;
+      padding: 10px 16px 9px;
+      text-align: center;
       font-size: 13px;
+      font-weight: 600;
+      color: #3c3c3c;
+      -webkit-app-region: drag;
+    }
+
+    /* Content area */
+    .content {
+      padding: 20px 24px 16px;
+    }
+
+    /* Two-column rows */
+    .row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 12px;
+      gap: 12px;
+    }
+
+    .row label {
+      flex: 0 0 160px;
+      text-align: right;
+      color: #3c3c3c;
+      font-size: 13px;
+    }
+
+    .row input {
+      flex: 1;
+      height: 22px;
+      padding: 2px 6px;
+      border-radius: 5px;
+      border: 1px solid #adadad;
+      background: #fff;
+      color: #1d1d1f;
+      font-size: 13px;
+      font-family: inherit;
       outline: none;
+      box-shadow: inset 0 1px 2px rgba(0,0,0,.08);
     }
 
-    input[type="text"]:focus,
-    input[type="number"]:focus {
-      border-color: #89b4fa;
+    .row input:focus {
+      border-color: #0077ed;
+      box-shadow: inset 0 1px 2px rgba(0,0,0,.08), 0 0 0 3px rgba(0,119,237,.25);
     }
 
-    input[type="color"] {
-      width: 100%;
-      height: 34px;
-      padding: 2px 4px;
-      border-radius: 6px;
-      border: 1px solid #45475a;
-      background: #313244;
+    .row input[type="color"] {
+      height: 26px;
+      padding: 2px 3px;
       cursor: pointer;
+      border-radius: 5px;
+    }
+
+    .row input[type="number"] {
+      width: 72px;
+      flex: 0 0 72px;
+    }
+
+    /* Separator */
+    .sep {
+      border: none;
+      border-top: 1px solid #c4c4c4;
+      margin: 16px 0;
+    }
+
+    /* Footer */
+    .footer {
+      display: flex;
+      justify-content: flex-end;
+      padding: 0 24px 16px;
+      gap: 8px;
     }
 
     button {
-      margin-top: 6px;
-      width: 100%;
-      padding: 8px;
-      border-radius: 6px;
-      border: none;
-      background: #89b4fa;
-      color: #1e1e2e;
-      font-weight: 600;
+      height: 22px;
+      padding: 0 14px;
+      border-radius: 5px;
       font-size: 13px;
+      font-family: inherit;
       cursor: pointer;
-      transition: background 0.15s;
+      border: 1px solid;
     }
 
-    button:hover { background: #b4befe; }
+    button.secondary {
+      background: linear-gradient(to bottom, #f5f5f5, #e8e8e8);
+      border-color: #adadad;
+      color: #1d1d1f;
+    }
+
+    button.secondary:hover {
+      background: linear-gradient(to bottom, #fff, #f0f0f0);
+    }
+
+    button.primary {
+      background: linear-gradient(to bottom, #1a8bff, #0077ed);
+      border-color: #005bbf;
+      color: #fff;
+      font-weight: 600;
+    }
+
+    button.primary:hover {
+      background: linear-gradient(to bottom, #2d98ff, #0080ff);
+    }
+
+    button.primary:active {
+      background: linear-gradient(to bottom, #0060cc, #0070d8);
+    }
   </style>
 </head>
 <body>
-  <h2>Settings</h2>
+  <div class="titlebar">PokéProductivity Settings</div>
 
-  <div class="field">
-    <label for="dex">Pokémon DEX number</label>
-    <input id="dex" type="text" placeholder="e.g. 0025" />
+  <div class="content">
+    <div class="row">
+      <label for="dex">Pokémon DEX number</label>
+      <input id="dex" type="text" placeholder="e.g. 0025" />
+    </div>
+
+    <div class="row">
+      <label for="scale">Sprite scale</label>
+      <input id="scale" type="number" min="1" max="6" step="0.5" />
+    </div>
+
+    <hr class="sep" />
+
+    <div class="row">
+      <label for="portraitScale">Portrait scale</label>
+      <input id="portraitScale" type="number" min="0.5" max="4" step="0.5" />
+    </div>
+
+    <div class="row">
+      <label for="borderColor">Portrait border color</label>
+      <input id="borderColor" type="color" />
+    </div>
   </div>
 
-  <div class="field">
-    <label for="scale">Sprite scale</label>
-    <input id="scale" type="number" min="1" max="6" step="0.5" />
-  </div>
+  <hr class="sep" style="margin: 0 24px;" />
 
-  <div class="field">
-    <label for="portraitScale">Portrait scale</label>
-    <input id="portraitScale" type="number" min="0.5" max="4" step="0.5" />
+  <div class="footer">
+    <button class="primary" id="save">Save &amp; Restart</button>
   </div>
-
-  <div class="field">
-    <label for="borderColor">Portrait border color</label>
-    <input id="borderColor" type="color" />
-  </div>
-
-  <button id="save">Save &amp; Restart</button>
 
   <script type="module" src="settings.js"></script>
 </body>

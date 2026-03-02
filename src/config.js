@@ -31,7 +31,7 @@ export const WALK_SPEED      = 1.2
 export const IDLE_CHANCE     = 0.003
 export const Y_PAD           = 6
 
-export const PORTRAIT_NAMES      = ['Normal', 'Happy', 'Sad', 'Angry', 'Worried', 'Inspired', 'Determined']
+export const PORTRAIT_NAMES      = ['Normal', 'Happy', 'Sad', 'Angry', 'Worried', 'Inspired', 'Determined', 'Dizzy']
 export const PORTRAIT_SIZE       = 40    // PMDCollab source size (always 40×40 px)
 export const PORTRAIT_BORDER     = 3     // Border width in screen pixels
 export const PORTRAIT_RADIUS     = 8     // Rounded corner radius in screen pixels

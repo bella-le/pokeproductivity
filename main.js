@@ -169,8 +169,8 @@ let settingsWin = null
 function openSettingsWindow() {
   if (settingsWin && !settingsWin.isDestroyed()) { settingsWin.focus(); return }
   settingsWin = new BrowserWindow({
-    width: 300,
-    height: 290,
+    width: 460,
+    height: 360,
     title: 'Settings',
     resizable: false,
     alwaysOnTop: true,
