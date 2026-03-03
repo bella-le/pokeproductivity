@@ -1,3 +1,5 @@
+import { hexToRgbLuminance } from '../shared/color.js'
+
 // ─── Type palette ─────────────────────────────────────────────────────────────
 
 let _isLight = false   // set after settings load, before render()
@@ -156,18 +158,13 @@ if (_rounded) document.querySelector('.shell').classList.add('rounded')
 // Apply panel color from settings
 ;(async () => {
   const settings = await window.electronAPI.getSettings()
-  const hex = settings.TASKS_COLOR ?? '#060612'
-  const r = parseInt(hex.slice(1, 3), 16)
-  const g = parseInt(hex.slice(3, 5), 16)
-  const b = parseInt(hex.slice(5, 7), 16)
+  const { r, g, b, luminance, fg } = hexToRgbLuminance(settings.TASKS_COLOR ?? '#060612')
+  _isLight = luminance > 0.4
   const root = document.documentElement
   root.style.setProperty('--pr', r)
   root.style.setProperty('--pg', g)
   root.style.setProperty('--pb', b)
-  // Perceived luminance — flip to black text on light backgrounds
-  const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255
-  _isLight = luminance > 0.4
-  root.style.setProperty('--fg', _isLight ? 0 : 255)
+  root.style.setProperty('--fg', fg)
   // Due label shadow: dark drop shadow on light backgrounds so colored labels stay readable
   root.style.setProperty('--due-shadow', _isLight ? '0 1px 3px rgba(0,0,0,0.45)' : 'none')
   // Render after colors are resolved so badge palette is correct

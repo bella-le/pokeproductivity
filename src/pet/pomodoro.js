@@ -1,3 +1,5 @@
+import { hexToRgbLuminance } from '../shared/color.js'
+
 // ─── Pomodoro overlay module ───────────────────────────────────────────────────
 // Embedded inside the pet window so the timer moves with the sprite.
 // Call initPomodoro(w, h, settings, callbacks) once after canvas is sized,
@@ -145,12 +147,7 @@ export function initPomodoro(overlayW, overlayH, settings, callbacks = {}) {
   _pom.style.height = `${overlayH}px`
 
   // Apply TASKS_COLOR to CSS vars on the overlay element
-  const hex = settings.TASKS_COLOR ?? '#060612'
-  const r = parseInt(hex.slice(1, 3), 16)
-  const g = parseInt(hex.slice(3, 5), 16)
-  const b = parseInt(hex.slice(5, 7), 16)
-  const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255
-  const fg = luminance > 0.4 ? 0 : 255
+  const { r, g, b, fg } = hexToRgbLuminance(settings.TASKS_COLOR ?? '#060612')
   _pom.style.setProperty('--pr', r)
   _pom.style.setProperty('--pg', g)
   _pom.style.setProperty('--pb', b)

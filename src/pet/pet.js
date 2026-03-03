@@ -29,11 +29,19 @@ let _portraitZoneH = 0  // height of portrait box in px (set during boot) — us
 
 // ─── Hover state ──────────────────────────────────────────────────────────────
 
-let isOverOpaque    = false    // true when cursor is over an opaque pixel (sprite or portrait)
-let _hoverPortrait  = 'Normal' // portrait shown on hover; temporarily 'Determined' after pomodoro stop
-let _hoverResetTimer = null    // handle for the post-stop portrait reset timeout
+let isOverOpaque     = false    // true when cursor is over an opaque pixel (sprite or portrait)
+let _hoverPortrait   = 'Normal' // portrait shown on hover; temporarily 'Determined' after pomodoro stop
+let _hoverResetTimer = null     // handle for the post-stop portrait reset timeout
+let _hoverLingTimer  = null     // delay before resuming walk after cursor leaves
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function resumeWalkAfterHoverLinger() {
+  clearTimeout(_hoverLingTimer)
+  _hoverLingTimer = setTimeout(() => {
+    if (!isDragging && !isExpanded && !isPomodoroControlling()) { isWalking = true; startAnim('Walk') }
+  }, 5000)
+}
 
 function resumeWalkAfterDelay() {
   const pauseFrames = Math.floor(Math.random() * 240) + 120
@@ -91,7 +99,7 @@ canvas.addEventListener('mouseleave', () => {
     isOverOpaque = false
     if (!isPomodoroControlling()) {
       setPortrait('Normal', false)
-      if (!isExpanded) resumeWalkAfterDelay()
+      if (!isExpanded) resumeWalkAfterHoverLinger()
     }
   }
   window.electronAPI.setIgnoreMouse(true)
@@ -145,6 +153,7 @@ canvas.addEventListener('mousemove', (e) => {
 
     if (opaque && !isOverOpaque) {
       isOverOpaque = true
+      clearTimeout(_hoverLingTimer)
       if (!isPomodoroControlling()) {
         isWalking = false
         startAnim('Idle')
@@ -154,7 +163,7 @@ canvas.addEventListener('mousemove', (e) => {
       isOverOpaque = false
       if (!isPomodoroControlling()) {
         setPortrait('Normal', false)
-        resumeWalkAfterDelay()
+        resumeWalkAfterHoverLinger()
       }
     }
   } catch {
