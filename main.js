@@ -78,6 +78,14 @@ ipcMain.on('save-settings', (_event, data) => {
   if (wasTasksOpen) openTasksWindow()
 })
 
+ipcMain.on('start-pomodoro', (_event, secs) => {
+  if (win && !win.isDestroyed()) win.webContents.send('start-pomodoro', secs)
+})
+
+ipcMain.on('task-complete', () => {
+  if (win && !win.isDestroyed()) win.webContents.send('task-complete')
+})
+
 ipcMain.on('show-context-menu', () => {
   const menu = Menu.buildFromTemplate([
     { label: 'Tasks',    click: () => { if (tasksWin && !tasksWin.isDestroyed()) { tasksWin.close(); return } openTasksWindow() } },
@@ -109,7 +117,7 @@ function openTasksWindow() {
     y: 20,
     frame: false,
     transparent: true,
-    alwaysOnTop: true,
+    alwaysOnTop: false,
     skipTaskbar: true,
     resizable: false,
     hasShadow: false,

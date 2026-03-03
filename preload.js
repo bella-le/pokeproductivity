@@ -28,5 +28,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   resizeTasksWindow: (h)     => ipcRenderer.send('resize-tasks-window', h),
 
   // Pomodoro
-  onShowPomodoro: (cb) => ipcRenderer.on('show-pomodoro', () => cb()),
+  onShowPomodoro:  (cb)   => ipcRenderer.on('show-pomodoro',  ()        => cb()),
+  onStartPomodoro: (cb)   => ipcRenderer.on('start-pomodoro', (_, secs) => cb(secs)),
+  startPomodoro:   (secs) => ipcRenderer.send('start-pomodoro', secs),
+
+  // Task completion → pet celebration
+  taskComplete:   ()     => ipcRenderer.send('task-complete'),
+  onTaskComplete: (cb)   => ipcRenderer.on('task-complete', () => cb()),
 })

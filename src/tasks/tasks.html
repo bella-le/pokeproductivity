@@ -183,6 +183,52 @@
     .due-label.today { color: #fb923c; }
     .due-label.over  { color: #f87171; }
 
+    /* ── Times progress tick ─────────────────────────────────────────────────── */
+
+    /* SVG arc replaces CSS border + background — avoids conic-gradient artifacts */
+    .tick-times {
+      border: none;
+      background: none;
+      position: relative;
+    }
+    .tick.tick-times svg { display: block; }  /* override .tick svg { display:none } */
+    .arc-track { stroke: rgba(var(--fg), var(--fg), var(--fg), 0.18); }
+    .arc-check { display: none; }
+
+    /* On completion: solid green button with checkmark, hide arc */
+    .tick-times.checked { background: #4ade80; border: 1.5px solid #4ade80; }
+    .tick-times.checked .arc-track,
+    .tick-times.checked .arc-fill  { display: none; }
+    .tick-times.checked .arc-check { display: block; }
+
+    .times-count {
+      font-size: 10px;
+      font-variant-numeric: tabular-nums;
+      color: rgba(var(--fg), var(--fg), var(--fg), 0.4);
+    }
+
+    /* ── Duration button ─────────────────────────────────────────────────────── */
+
+    .duration-btn {
+      background: rgba(var(--fg), var(--fg), var(--fg), 0.07);
+      border: 1px solid rgba(var(--fg), var(--fg), var(--fg), 0.18);
+      color: rgba(var(--fg), var(--fg), var(--fg), 0.6);
+      border-radius: 99px;
+      font-size: 9.5px;
+      font-weight: 600;
+      padding: 2px 7px;
+      cursor: pointer;
+      font-family: inherit;
+      display: inline-flex;
+      align-items: center;
+      -webkit-app-region: no-drag;
+      transition: background 0.15s, color 0.15s;
+    }
+    .duration-btn:hover {
+      background: rgba(var(--fg), var(--fg), var(--fg), 0.14);
+      color: rgba(var(--fg), var(--fg), var(--fg), 0.9);
+    }
+
     .shell.rounded { border-radius: 18px; }
 
     /* ── Right-docked overrides ──────────────────────────────────────────────── */
@@ -228,6 +274,164 @@
       padding: 48px 0;
       line-height: 1.8;
     }
+
+    /* ── Add Task button + form ──────────────────────────────────────────────── */
+
+    .add-task-btn {
+      -webkit-app-region: no-drag;
+      flex-shrink: 0;
+      width: 100%;
+      padding: 7px 10px;
+      background: rgba(var(--fg), var(--fg), var(--fg), 0.05);
+      border: 1px dashed rgba(var(--fg), var(--fg), var(--fg), 0.2);
+      border-radius: 10px;
+      color: rgba(var(--fg), var(--fg), var(--fg), 0.5);
+      font-size: 12px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .add-task-btn:hover {
+      background: rgba(var(--fg), var(--fg), var(--fg), 0.1);
+      color: rgba(var(--fg), var(--fg), var(--fg), 0.8);
+      border-color: rgba(var(--fg), var(--fg), var(--fg), 0.35);
+    }
+    .add-task-btn.open {
+      border-style: solid;
+      color: rgba(var(--fg), var(--fg), var(--fg), 0.8);
+    }
+    .add-icon {
+      font-size: 16px;
+      font-weight: 300;
+      line-height: 1;
+      display: inline-block;
+      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .add-task-btn.open .add-icon { transform: rotate(45deg); }
+
+    .add-form {
+      flex-shrink: 0;
+      max-height: 0;
+      overflow: hidden;
+      opacity: 0;
+      transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.18s;
+      padding-top: 0;
+    }
+    .add-form.open { max-height: 360px; opacity: 1; padding-top: 4px; }
+
+    .add-form-inner {
+      padding: 10px 11px;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      background: rgba(var(--pr), var(--pg), var(--pb), 0.75);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-radius: 15px;
+      border: 1px solid rgba(var(--fg), var(--fg), var(--fg), 0.08);
+      box-shadow: inset 0 1px 0 rgba(var(--fg), var(--fg), var(--fg), 0.06);
+    }
+
+    .af-field {
+      width: 100%;
+      background: rgba(var(--fg), var(--fg), var(--fg), 0.07);
+      border: 1px solid rgba(var(--fg), var(--fg), var(--fg), 0.18);
+      border-radius: 6px;
+      padding: 5px 8px;
+      font-size: 12px;
+      font-family: inherit;
+      color: rgba(var(--fg), var(--fg), var(--fg), 0.9);
+      outline: none;
+      box-sizing: border-box;
+      transition: border-color 0.15s;
+    }
+    .af-field::placeholder { color: rgba(var(--fg), var(--fg), var(--fg), 0.28); }
+    .af-field:focus { border-color: rgba(var(--fg), var(--fg), var(--fg), 0.45); }
+
+    .af-select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='rgba(160,160,160,0.7)' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 8px center;
+      padding-right: 22px;
+      cursor: pointer;
+    }
+    .af-select option { background: #0c0c18; }
+
+    .af-row {
+      display: flex;
+      gap: 6px;
+    }
+    .af-row .af-field { flex: 1; }
+
+    .af-opt {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .af-opt-lbl {
+      font-size: 12px;
+      color: rgba(var(--fg), var(--fg), var(--fg), 0.35);
+      flex-shrink: 0;
+    }
+    .af-opt .af-field { flex: 1; text-align: center; }
+    .af-num::-webkit-inner-spin-button,
+    .af-num::-webkit-outer-spin-button { appearance: none; }
+
+    .af-btn-submit {
+      width: 100%;
+      padding: 6px;
+      background: rgba(var(--fg), var(--fg), var(--fg), 0.12);
+      border: 1px solid rgba(var(--fg), var(--fg), var(--fg), 0.25);
+      border-radius: 7px;
+      color: rgba(var(--fg), var(--fg), var(--fg), 0.9);
+      font-size: 12px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: filter 0.15s;
+    }
+    .af-btn-submit:hover  { filter: brightness(1.2); }
+    .af-btn-submit:active { filter: brightness(0.9); }
+
+    /* ── Context menu ────────────────────────────────────────────────────────── */
+
+    .ctx-menu {
+      position: fixed;
+      z-index: 999;
+      min-width: 148px;
+      background: rgba(var(--pr), var(--pg), var(--pb), 0.95);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(var(--fg), var(--fg), var(--fg), 0.13);
+      border-radius: 10px;
+      padding: 4px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+      opacity: 0;
+      pointer-events: none;
+      transform: scale(0.95);
+      transform-origin: top left;
+      transition: opacity 0.1s, transform 0.1s;
+    }
+    .ctx-menu.visible { opacity: 1; pointer-events: auto; transform: scale(1); }
+    .ctx-item {
+      padding: 7px 12px;
+      font-size: 12px;
+      font-family: inherit;
+      border-radius: 6px;
+      cursor: pointer;
+      color: rgba(var(--fg), var(--fg), var(--fg), 0.85);
+      white-space: nowrap;
+    }
+    .ctx-item:hover { background: rgba(var(--fg), var(--fg), var(--fg), 0.1); }
+    .ctx-danger     { color: #f87171; }
+    .ctx-danger:hover { background: rgba(239,68,68,0.15); }
   </style>
 </head>
 <body>
@@ -236,7 +440,49 @@
       <span class="header-title">Tasks</span>
       <button class="collapse-btn" id="collapse">▼</button>
     </header>
+    <button class="add-task-btn" id="add-task-btn">
+      <span class="add-icon">+</span><span class="add-label"> Add Task</span>
+    </button>
+
+    <div class="add-form" id="add-form">
+      <div class="add-form-inner">
+        <input id="af-title" class="af-field" type="text" placeholder="Task title" />
+        <div class="af-row">
+          <select id="af-type" class="af-field af-select">
+            <option value="Todo">Todo</option>
+            <option value="Habit">Habit</option>
+            <option value="Daily">Daily</option>
+            <option value="Weekly">Weekly</option>
+            <option value="Monthly">Monthly</option>
+          </select>
+          <input id="af-due" class="af-field" type="date" />
+        </div>
+        <div class="af-row">
+          <div class="af-opt">
+            <span class="af-opt-lbl">from</span>
+            <input id="af-start" class="af-field" type="date" />
+          </div>
+        </div>
+        <div class="af-row">
+          <div class="af-opt">
+            <span class="af-opt-lbl">⏱</span>
+            <input id="af-duration" class="af-field af-num" type="number" min="1" max="180" placeholder="min" />
+          </div>
+          <div class="af-opt">
+            <span class="af-opt-lbl">×</span>
+            <input id="af-times" class="af-field af-num" type="number" min="2" max="99" placeholder="times" />
+          </div>
+        </div>
+        <button id="af-submit" class="af-btn-submit">Add Task</button>
+      </div>
+    </div>
+
     <div class="task-list" id="task-list"></div>
+  </div>
+  <div class="ctx-menu" id="ctx-menu">
+    <div class="ctx-item" id="ctx-edit">Edit Task</div>
+    <div class="ctx-item" id="ctx-duplicate">Duplicate Task</div>
+    <div class="ctx-item ctx-danger" id="ctx-delete">Delete Task</div>
   </div>
   <script type="module" src="tasks.js"></script>
 </body>

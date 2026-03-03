@@ -210,3 +210,8 @@ export function togglePomodoro() {
     _input.focus()
   }
 }
+
+export function startPomodoro(secs) {
+  _pom.classList.remove('pom-hidden')
+  startTimer(secs)
+}

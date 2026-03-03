@@ -2,7 +2,7 @@ import { cfg, WALK_SPEED, IDLE_CHANCE, Y_PAD,
          PORTRAIT_NAMES, PORTRAIT_SIZE, PORTRAIT_BORDER, PORTRAIT_GAP, INFO_PANEL_W } from './config.js'
 import { loadPet, loadPortraits } from './loader.js'
 import { init as initAnim, initPortraits, startAnim, stepAnim, drawFrame, setPortrait, setExpanded, setExp } from './animator.js'
-import { initPomodoro, togglePomodoro, isPomodoroControlling } from './pomodoro.js'
+import { initPomodoro, togglePomodoro, startPomodoro, isPomodoroControlling } from './pomodoro.js'
 
 // ─── Canvas ───────────────────────────────────────────────────────────────────
 
@@ -267,6 +267,27 @@ function loop() {
       },
     })
     window.electronAPI.onShowPomodoro(togglePomodoro)
+    window.electronAPI.onStartPomodoro(startPomodoro)
+
+    let _taskCelebTimer = null
+    window.electronAPI.onTaskComplete(() => {
+      if (isPomodoroControlling()) return
+      clearTimeout(_taskCelebTimer)
+      isWalking = false
+      startAnim('Hop')
+      setPortrait('Inspired', true)
+      _taskCelebTimer = setTimeout(() => {
+        if (isPomodoroControlling()) return
+        if (isOverOpaque) {
+          // cursor still over pet — stay in idle with hover portrait
+          setPortrait(_hoverPortrait, true)
+          startAnim('Idle')
+        } else {
+          setPortrait('Normal', false)
+          if (!isDragging && !isExpanded) { isWalking = true; startAnim('Walk') }
+        }
+      }, 2000)
+    })
 
     startAnim('Walk')
     loop()
