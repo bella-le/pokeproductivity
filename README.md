@@ -91,8 +91,6 @@ dist-pkg/PokéProductivity-darwin-arm64/PokéProductivity.app
 
 The build targets **arm64** (Apple Silicon). No code-signing certificate is required — the app is ad-hoc signed automatically.
 
-> **Note:** The project uses `@electron/packager` instead of `electron-builder`. electron-builder v24 writes an incorrect `ElectronAsarIntegrity` hash that causes Electron 32 to silently abort before `app.ready`.
-
 ## Project structure
 
 ```
