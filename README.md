@@ -4,7 +4,7 @@ A transparent, frameless Electron desktop pet with a built-in task manager and P
 
 Sprites are from the [PMDCollab](https://github.com/PMDCollab/SpriteCollab) sprite repository.
 
-<video src="demo.mp4" controls width="600"></video>
+<video src="https://github.com/user-attachments/assets/7b4df654-2a18-4a08-b6f5-c2ec23700781" controls width="600"></video>
 
 ## Features
 
