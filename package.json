@@ -1,11 +1,11 @@
 {
   "name": "pokemon-desktop-pet",
   "version": "0.1.0",
-  "description": "A PMDCollab-powered Pokémon desktop pet",
+  "description": "A Pokémon desktop pet built with a to-do list.",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "build": "electron-builder"
+    "build": "node build/pack.js"
   },
   "build": {
     "appId": "com.pokeproductivity.app",
@@ -13,19 +13,29 @@
     "files": [
       "main.js",
       "preload.js",
+      "lib/**",
       "src/**",
       "settings.json",
       "assets/**"
     ],
+    "asar": false,
     "mac": {
+      "identity": null,
       "icon": "assets/icon.icns",
       "category": "public.app-category.productivity",
-      "target": [{ "target": "dmg", "arch": ["arm64", "x64"] }]
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64"
+          ]
+        }
+      ]
     }
   },
   "devDependencies": {
-    "electron": "^29.0.0",
-    "electron-builder": "^24.0.0"
+    "@electron/packager": "^19.0.5",
+    "electron": "^32.0.0"
   },
   "license": "ISC"
 }
