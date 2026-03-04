@@ -4,6 +4,8 @@ A transparent, frameless Electron desktop pet with a built-in task manager and P
 
 Sprites are from the [PMDCollab](https://github.com/PMDCollab/SpriteCollab) sprite repository.
 
+<video src="Screen Recording 2026-03-03 at 4.10.53 PM.mov" controls width="600"></video>
+
 ## Features
 
 - **Walking sprite** — your Pokémon wanders left and right, idles, and reacts to interactions using sprites
